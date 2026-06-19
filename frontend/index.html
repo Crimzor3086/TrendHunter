@@ -3,853 +3,3746 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Trend Hunter</title>
+  <title>Trendjack Hunter — AI Trend-to-Script Engine</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
   <style>
     :root {
-      --bg: #f6f1e8;
-      --ink: #171513;
-      --muted: #6e675f;
-      --line: #ded4c6;
-      --panel: #fffaf2;
-      --hot: #e84142;
-      --sun: #f6b233;
-      --mint: #0f9b72;
-      --night: #1d2730;
-      --blue: #2662d9;
-      --shadow: 0 16px 45px rgba(29, 39, 48, 0.13);
+      /* Colors */
+      --bg: #070913;
+      --bg-panel: #0f1322;
+      --bg-panel-light: #161c30;
+      --border: rgba(255, 255, 255, 0.07);
+      --border-focus: rgba(232, 65, 66, 0.4);
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent: #E84142; /* Avalanche Red */
+      --accent-purple: #8B5CF6; /* Purple */
+      --success: #10B981;
+      --warning: #F59E0B;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.6);
+      --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
-      margin: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background:
-        linear-gradient(90deg, rgba(222, 212, 198, 0.42) 1px, transparent 1px),
-        linear-gradient(180deg, rgba(222, 212, 198, 0.42) 1px, transparent 1px),
-        var(--bg);
-      background-size: 44px 44px;
-      color: var(--ink);
-    }
-
-    button, input {
-      font: inherit;
-    }
-
-    button {
-      border: 0;
-      cursor: pointer;
-    }
-
-    .app {
-      width: min(1480px, 100%);
-      margin: 0 auto;
-      padding: 22px;
-    }
-
-    .topbar {
-      min-height: 64px;
       display: flex;
-      align-items: center;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--bg-panel-light);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+
+    /* Layout Structure */
+    .app-container {
+      display: flex;
+      width: 100%;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* Sidebar Styles */
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, #0b0f19 0%, #06080e 100%);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
       justify-content: space-between;
-      gap: 16px;
-      border-bottom: 1px solid var(--line);
+      z-index: 100;
+      padding: 24px 16px;
+    }
+
+    .sidebar-top {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
     }
 
     .brand {
       display: flex;
       align-items: center;
       gap: 12px;
-      min-width: 0;
+      font-family: 'Outfit', sans-serif;
+      text-decoration: none;
+      color: var(--text);
     }
 
-    .mark {
-      width: 40px;
-      height: 40px;
-      display: grid;
-      place-items: center;
+    .brand-logo {
+      width: 36px;
+      height: 36px;
       border-radius: 8px;
-      background: var(--ink);
-      color: var(--sun);
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-purple) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-weight: 900;
-      box-shadow: 4px 4px 0 var(--hot);
-      flex: 0 0 auto;
+      font-size: 1.1rem;
+      color: #fff;
+      box-shadow: 0 0 15px rgba(232, 65, 66, 0.4);
     }
 
-    h1 {
-      margin: 0;
-      font-size: clamp(1.1rem, 2vw, 1.45rem);
-      line-height: 1.1;
-      letter-spacing: 0;
-    }
-
-    .topbar p {
-      margin: 3px 0 0;
-      color: var(--muted);
-      font-size: 0.86rem;
-    }
-
-    .actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .status {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 38px;
-      padding: 0 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(255, 250, 242, 0.78);
-      color: var(--muted);
-      font-size: 0.85rem;
-      white-space: nowrap;
-    }
-
-    .dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--hot);
-      box-shadow: 0 0 0 4px rgba(232, 65, 66, 0.13);
-    }
-
-    .status.connected .dot {
-      background: var(--mint);
-      box-shadow: 0 0 0 4px rgba(15, 155, 114, 0.14);
-    }
-
-    .primary, .secondary, .icon-btn {
-      min-height: 38px;
-      border-radius: 8px;
-      transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
-    }
-
-    .primary {
-      padding: 0 15px;
-      background: var(--hot);
-      color: white;
+    .brand-title {
+      font-size: 1.15rem;
       font-weight: 800;
-      box-shadow: 0 8px 18px rgba(232, 65, 66, 0.2);
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #fff 0%, #d1d5db 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
-    .secondary {
-      padding: 0 14px;
-      background: var(--ink);
-      color: white;
-      font-weight: 750;
-    }
-
-    .icon-btn {
-      width: 38px;
-      display: grid;
-      place-items: center;
-      background: var(--panel);
-      border: 1px solid var(--line);
-      color: var(--ink);
-      font-size: 1.05rem;
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-    }
-
-    button:disabled {
-      cursor: not-allowed;
-      transform: none;
-      opacity: 0.55;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(270px, 0.75fr) minmax(520px, 1.65fr) minmax(280px, 0.82fr);
-      gap: 18px;
-      padding-top: 18px;
-      align-items: start;
-    }
-
-    .panel, .brief, .queue-item, .metric {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(255, 250, 242, 0.92);
-      box-shadow: var(--shadow);
-    }
-
-    .panel {
-      padding: 16px;
-    }
-
-    .panel + .panel {
-      margin-top: 18px;
-    }
-
-    h2, h3 {
-      margin: 0;
-      letter-spacing: 0;
-    }
-
-    h2 {
-      font-size: 0.95rem;
-      text-transform: uppercase;
-    }
-
-    h3 {
-      font-size: 1rem;
-      line-height: 1.25;
-    }
-
-    .label {
-      color: var(--muted);
-      font-size: 0.78rem;
-      font-weight: 800;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-    }
-
-    .sources {
-      display: grid;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .source {
-      display: grid;
-      grid-template-columns: 32px 1fr auto;
-      align-items: center;
-      gap: 10px;
-      padding: 10px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #fffdf8;
-    }
-
-    .source-icon {
-      width: 32px;
-      height: 32px;
-      display: grid;
-      place-items: center;
-      border-radius: 8px;
-      background: var(--night);
-      color: white;
-      font-weight: 900;
-    }
-
-    .source strong, .queue-item strong {
-      display: block;
-      font-size: 0.88rem;
-    }
-
-    .source span, .queue-item span {
-      color: var(--muted);
-      font-size: 0.78rem;
-    }
-
-    .pulse {
-      color: var(--mint);
-      font-size: 0.76rem;
-      font-weight: 850;
-    }
-
-    .queue {
-      display: grid;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .queue-item {
-      padding: 13px;
-      box-shadow: none;
-      display: grid;
-      gap: 9px;
-    }
-
-    .queue-item.active {
-      border-color: var(--hot);
-      background: #fff5ec;
-    }
-
-    .scoreline {
-      height: 7px;
-      border-radius: 999px;
-      overflow: hidden;
-      background: #eadfce;
-    }
-
-    .scoreline div {
-      height: 100%;
-      border-radius: inherit;
-      background: linear-gradient(90deg, var(--hot), var(--sun));
-    }
-
-    .brief {
-      overflow: hidden;
-    }
-
-    .brief-hero {
-      position: relative;
-      min-height: 214px;
-      padding: 26px;
-      display: grid;
-      align-content: end;
-      background:
-        linear-gradient(135deg, rgba(23, 21, 19, 0.92), rgba(29, 39, 48, 0.7)),
-        url("https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1400&q=80");
-      background-size: cover;
-      background-position: center;
-      color: white;
-    }
-
-    .brief-hero::after {
-      content: "";
-      position: absolute;
-      inset: auto 0 0;
-      height: 5px;
-      background: linear-gradient(90deg, var(--hot), var(--sun), var(--mint), var(--blue));
-    }
-
-    .tag-row {
+    .nav-menu {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 16px;
+      flex-direction: column;
+      gap: 6px;
+      list-style: none;
     }
 
-    .tag {
-      display: inline-flex;
-      align-items: center;
-      min-height: 28px;
-      padding: 0 10px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.13);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: white;
-      font-size: 0.78rem;
-      font-weight: 850;
-    }
-
-    .brief-hero h2 {
-      max-width: 760px;
-      font-size: clamp(1.9rem, 5vw, 4rem);
-      line-height: 0.98;
-      text-transform: none;
-      letter-spacing: 0;
-    }
-
-    .brief-hero p {
-      max-width: 720px;
-      margin: 14px 0 0;
-      color: rgba(255, 255, 255, 0.82);
-      font-size: 1rem;
-      line-height: 1.55;
-    }
-
-    .brief-actions {
+    .nav-item a {
       display: flex;
       align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 18px;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: var(--transition);
+      cursor: pointer;
     }
 
-    .brief-actions .primary {
-      min-width: 190px;
+    .nav-item a:hover {
+      color: var(--text);
+      background-color: rgba(255, 255, 255, 0.04);
     }
 
-    .generated-state {
-      color: rgba(255, 255, 255, 0.76);
-      font-size: 0.84rem;
-      font-weight: 750;
+    .nav-item.active a {
+      color: var(--text);
+      background: linear-gradient(90deg, rgba(232, 65, 66, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%);
+      border-left: 3px solid var(--accent);
+      padding-left: 11px;
     }
 
-    .brief-body {
-      padding: 20px;
+    .nav-item svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
     }
 
-    .metrics {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    .metric {
-      padding: 13px;
-      box-shadow: none;
-      background: #fffdf8;
-    }
-
-    .metric strong {
-      display: block;
-      margin-top: 6px;
-      font-size: 1.28rem;
-    }
-
-    .brief-grid {
-      display: grid;
-      grid-template-columns: 0.9fr 1.1fr;
+    .sidebar-bottom {
+      display: flex;
+      flex-direction: column;
       gap: 16px;
     }
 
-    .section {
-      border-top: 1px solid var(--line);
-      padding-top: 15px;
+    .wallet-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 0.8rem;
     }
 
-    .section + .section {
-      margin-top: 16px;
-    }
-
-    .section p {
-      margin: 8px 0 0;
-      color: var(--ink);
-      line-height: 1.55;
-    }
-
-    .script {
-      margin-top: 10px;
-      padding: 16px;
-      border-radius: 8px;
-      background: var(--night);
-      color: #f9f3e7;
-      line-height: 1.62;
-      white-space: pre-line;
-    }
-
-    .remix-list {
+    .wallet-status-row {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .remix-list span {
-      padding: 8px 10px;
-      border-radius: 8px;
-      background: #f1e7d8;
-      color: var(--ink);
-      font-size: 0.86rem;
-      font-weight: 780;
-    }
-
-    .right .panel {
-      box-shadow: var(--shadow);
-    }
-
-    .formula {
-      display: grid;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .formula-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
       align-items: center;
-      color: var(--muted);
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .wallet-status-label {
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .wallet-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--warning);
+      display: inline-block;
+    }
+
+    .wallet-status-dot.connected {
+      background-color: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .network-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(232, 65, 66, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(232, 65, 66, 0.2);
+    }
+
+    .wallet-address {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text);
+      margin-bottom: 12px;
+      word-break: break-all;
+      font-size: 0.75rem;
+    }
+
+    .wallet-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent) 0%, #b91c1c 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .wallet-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .toggle-mode-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
+    /* Switch toggle styling */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 34px;
+      height: 20px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #374151;
+      transition: .4s;
+      border-radius: 20px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--success);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(14px);
+    }
+
+    /* Main Content Styling */
+    .main-content {
+      margin-left: 260px;
+      flex-grow: 1;
+      min-height: 100vh;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      max-width: 1400px;
+      width: calc(100% - 260px);
+    }
+
+    /* Tab Page Switcher Container */
+    .tab-page {
+      display: none;
+      animation: fadeIn 0.3s ease-in-out forwards;
+    }
+
+    .tab-page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Page Header */
+    .page-header {
+      margin-bottom: 24px;
+    }
+
+    .page-title-pre {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 4px;
+    }
+
+    .page-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .page-description {
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-size: 0.95rem;
+    }
+
+    /* Dashboard Layout Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.8fr 1.2fr;
+      gap: 24px;
+    }
+
+    /* Card Panels */
+    .panel {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 14px;
+    }
+
+    .panel-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-title svg {
+      color: var(--accent);
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-founder {
+      background: rgba(139, 92, 246, 0.12);
+      color: #a78bfa;
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+
+    .badge-business {
+      background: rgba(59, 130, 246, 0.12);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+
+    .badge-money {
+      background: rgba(16, 185, 129, 0.12);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .badge-entrepreneurship {
+      background: rgba(245, 158, 11, 0.12);
+      color: #fcd34d;
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    /* Platform Icons Row */
+    .platform-icons {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .platform-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--bg-panel-light);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .platform-badge:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .platform-badge svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+
+    /* Score Indicator */
+    .score-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .score-circle-wrapper {
+      position: relative;
+      width: 44px;
+      height: 44px;
+    }
+
+    .score-circle-bg {
+      fill: none;
+      stroke: var(--bg-panel-light);
+      stroke-width: 4;
+    }
+
+    .score-circle-progress {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 4;
+      stroke-linecap: round;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+      transition: stroke-dashoffset 0.6s ease;
+    }
+
+    .score-number {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.85rem;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* Buttons Style */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 8px;
       font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      text-decoration: none;
+      border: 1px solid transparent;
     }
 
-    .formula-row strong {
-      color: var(--ink);
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, #b91c1c 100%);
+      color: white;
+      box-shadow: 0 4px 14px rgba(232, 65, 66, 0.25);
     }
 
-    .audit {
-      display: grid;
-      gap: 10px;
-      margin-top: 14px;
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px rgba(232, 65, 66, 0.35);
+      transform: translateY(-1.5px);
     }
 
-    .audit-row {
-      display: grid;
-      grid-template-columns: 88px 1fr;
-      gap: 10px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--line);
+    .btn-secondary {
+      background-color: var(--bg-panel-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text-muted);
+      transform: translateY(-1px);
+    }
+
+    .btn-accent {
+      background: linear-gradient(135deg, var(--accent-purple) 0%, #6d28d9 100%);
+      color: white;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25);
+    }
+
+    .btn-accent:hover {
+      box-shadow: 0 6px 20px rgba(139, 92, 246, 0.35);
+      transform: translateY(-1.5px);
+    }
+
+    .btn-icon-only {
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background-color: var(--bg-panel-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-icon-only:hover {
+      border-color: var(--text-muted);
+      color: var(--accent);
+    }
+
+    .btn-icon-only svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    /* Stacked cards feed */
+    .priority-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .trend-card-large {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .trend-card-large:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .trend-card-large::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(180deg, var(--accent) 0%, var(--accent-purple) 100%);
+      opacity: 0.6;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .card-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .meta-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .trend-title-large {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 800;
+      line-height: 1.3;
+      letter-spacing: -0.3px;
+      color: var(--text);
+    }
+
+    .card-stats-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      color: var(--text-muted);
       font-size: 0.85rem;
     }
 
-    .audit-row:last-child {
-      border-bottom: 0;
-      padding-bottom: 0;
+    .card-stat-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .audit-row span:first-child {
-      color: var(--muted);
-      font-weight: 800;
+    .card-stat-item svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
     }
 
-    .contract-box {
-      margin-top: 14px;
-      display: grid;
+    .card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      margin-top: 4px;
+    }
+
+    .card-buttons {
+      display: flex;
+      align-items: center;
       gap: 10px;
     }
 
-    input {
-      width: 100%;
-      min-height: 38px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 0 10px;
-      background: #fffdf8;
-      color: var(--ink);
+    /* Horizontal scroll row */
+    .trending-now-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
-    .log {
-      min-height: 88px;
-      max-height: 160px;
-      overflow: auto;
-      padding: 10px;
+    .trending-strip-scroll {
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scroll-snap-type: x mandatory;
+    }
+
+    .trending-strip-card {
+      flex: 0 0 240px;
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      scroll-snap-align: start;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .trending-strip-card:hover {
+      border-color: var(--accent);
+      background-color: var(--bg-panel-light);
+    }
+
+    .strip-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--text);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .strip-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .strip-score {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--accent);
+      background: rgba(232, 65, 66, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* Alerts Panel */
+    .alerts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .alert-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
       border-radius: 8px;
-      background: #171513;
-      color: #f9f3e7;
-      font-family: "SFMono-Regular", Consolas, monospace;
-      font-size: 0.76rem;
+      background: rgba(255, 255, 255, 0.015);
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+
+    .alert-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--success);
+      margin-top: 5px;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .alert-indicator.pulse::after {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: -3px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid var(--success);
+      animation: pulse 1.5s infinite;
+    }
+
+    .alert-indicator.warning {
+      background-color: var(--warning);
+    }
+    .alert-indicator.warning::after {
+      border-color: var(--warning);
+    }
+
+    .alert-indicator.accent {
+      background-color: var(--accent-purple);
+    }
+    .alert-indicator.accent::after {
+      border-color: var(--accent-purple);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.6); opacity: 1; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+
+    .alert-details {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .alert-text {
+      color: var(--text);
+      font-weight: 550;
+    }
+
+    .alert-time {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Filter Styling */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      background: var(--bg-panel);
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .filter-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .filter-select {
+      background: var(--bg-panel-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      outline: none;
+      min-width: 140px;
+    }
+
+    .filter-select:focus {
+      border-color: var(--accent);
+    }
+
+    /* Grid layout of Live Trends */
+    .trends-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 20px;
+      margin-top: 16px;
+    }
+
+    .trend-card-medium {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .trend-card-medium:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .trend-preview-box {
+      width: 100%;
+      background: #030408;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Mock Social Elements Styles */
+    .mock-tweet {
+      padding: 12px;
+      font-size: 0.8rem;
+    }
+    .tweet-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .tweet-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent-purple);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: 0.65rem;
+    }
+    .tweet-userinfo {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+    .tweet-name {
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .tweet-verified-svg {
+      width: 12px;
+      height: 12px;
+      fill: #1d9bf0;
+    }
+    .tweet-handle {
+      color: var(--text-muted);
+      font-size: 0.7rem;
+    }
+    .tweet-body {
+      color: var(--text);
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+    .tweet-footer {
+      display: flex;
+      gap: 16px;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      padding-top: 6px;
+    }
+
+    .mock-tiktok {
+      display: flex;
+      height: 150px;
+      position: relative;
+    }
+    .tiktok-cover {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.85));
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 10px;
+      position: relative;
+    }
+    .tiktok-cover-pattern {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      z-index: -1;
+      filter: brightness(0.65);
+    }
+    .tiktok-play-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .tiktok-play-btn svg {
+      width: 14px;
+      height: 14px;
+      fill: white;
+    }
+    .tiktok-creator {
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: #00f2fe; /* TikTok cyan style */
+      margin-bottom: 2px;
+    }
+    .tiktok-caption {
+      font-size: 0.7rem;
+      color: var(--text);
+      line-height: 1.3;
+    }
+    .tiktok-stats {
+      position: absolute;
+      right: 8px;
+      bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.65rem;
+      color: white;
+    }
+    .tiktok-stat-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1;
+    }
+    .tiktok-stat-node svg {
+      width: 16px;
+      height: 16px;
+      fill: white;
+      margin-bottom: 2px;
+    }
+
+    .mock-reddit {
+      padding: 12px;
+      font-size: 0.8rem;
+    }
+    .reddit-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      margin-bottom: 6px;
+    }
+    .reddit-logo {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ff4500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 800;
+      font-size: 0.6rem;
+    }
+    .reddit-body {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+      line-height: 1.35;
+    }
+    .reddit-post-preview {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 6px;
+      padding: 8px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      border-left: 2px solid var(--accent);
+    }
+    .reddit-footer {
+      display: flex;
+      gap: 12px;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+    }
+
+    .mock-news {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 12px;
+      justify-content: space-between;
+    }
+    .news-tag {
+      align-self: flex-start;
+      font-size: 0.65rem;
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .news-title {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #fff;
+      line-height: 1.3;
+      margin: 6px 0;
+    }
+    .news-source {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding-top: 6px;
+    }
+
+    /* Page 3: Detail Page 3-Column Layout */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 0.9fr 1.2fr 0.9fr;
+      gap: 20px;
+    }
+
+    .detail-left, .detail-center, .detail-right {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .detail-info-block {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    .detail-info-block:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .detail-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .detail-value {
+      font-size: 0.9rem;
       line-height: 1.5;
     }
 
-    .stage {
+    /* Detail Page Carousel Slider */
+    .carousel-container {
+      background: #030408;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 16px;
+      position: relative;
+      min-height: 240px;
       display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 14px;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
-    .stage span {
-      padding: 7px 9px;
-      border-radius: 8px;
-      border: 1px solid var(--line);
-      background: #fffdf8;
-      color: var(--muted);
-      font-size: 0.78rem;
+    .carousel-slides {
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .carousel-slide {
+      width: 100%;
+      display: none;
+    }
+
+    .carousel-slide.active {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .carousel-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
+    .carousel-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .carousel-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--bg-panel-light);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .carousel-dot.active {
+      background-color: var(--accent);
+      width: 18px;
+      border-radius: 4px;
+    }
+
+    .detail-actions-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .detail-actions-row button {
+      flex-grow: 1;
+    }
+
+    /* Page 4: Content Brief Detail Blocks (Notion AI style) */
+    .brief-container {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .brief-card-highlight {
+      background: linear-gradient(135deg, rgba(232, 65, 66, 0.08) 0%, rgba(139, 92, 246, 0.03) 100%);
+      border: 1px solid rgba(232, 65, 66, 0.2);
+      border-left: 5px solid var(--accent);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .brief-section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+    }
+
+    .brief-section-title svg {
+      width: 18px;
+      height: 18px;
+      color: var(--accent);
+    }
+
+    .kuzana-title {
+      color: var(--accent);
       font-weight: 800;
     }
 
-    .stage span.active {
-      background: var(--mint);
-      color: white;
-      border-color: var(--mint);
+    .hooks-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
     }
 
-    @media (max-width: 1120px) {
-      .layout {
+    .hook-item-card {
+      background: var(--bg-panel-light);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      transition: var(--transition);
+    }
+
+    .hook-item-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      background-color: rgba(255, 255, 255, 0.01);
+    }
+
+    .hook-text {
+      font-size: 0.92rem;
+      line-height: 1.4;
+      font-weight: 550;
+    }
+
+    /* Script Panel */
+    .script-box-container {
+      background-color: #030408;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .script-box-header {
+      background: var(--bg-panel-light);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .script-box-body {
+      padding: 20px;
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: var(--text);
+      white-space: pre-wrap;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .script-segment {
+      margin-bottom: 14px;
+      position: relative;
+      padding-left: 14px;
+      border-left: 2px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .script-segment:last-child {
+      margin-bottom: 0;
+    }
+
+    .script-segment-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--accent-purple);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+      display: block;
+    }
+
+    .script-segment-content {
+      color: #e5e7eb;
+    }
+
+    .remix-flow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-panel-light);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .remix-step {
+      flex: 1 1 200px;
+      text-align: center;
+      padding: 10px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .remix-step-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .remix-step-value {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .remix-arrow {
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .remix-arrow svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Page 5: Avalanche Registry */
+    .registry-settings {
+      display: grid;
+      grid-template-columns: 1.8fr 1.2fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .form-input-container {
+      display: flex;
+      gap: 10px;
+    }
+
+    .form-input {
+      flex-grow: 1;
+      background: var(--bg-panel-light);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent);
+    }
+
+    /* Console logs widget */
+    .console-box {
+      background: #030408;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      height: 100%;
+    }
+
+    .console-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+
+    .console-logs {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--success);
+      line-height: 1.4;
+      overflow-y: auto;
+      max-height: 110px;
+      flex-grow: 1;
+    }
+
+    /* Registry Table */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg-panel);
+    }
+
+    .registry-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+
+    .registry-table th {
+      background-color: var(--bg-panel-light);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 18px;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .registry-table td {
+      border-bottom: 1px solid var(--border);
+      padding: 14px 18px;
+      color: var(--text);
+    }
+
+    .registry-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .registry-table tr:hover td {
+      background-color: rgba(255,255,255,0.01);
+    }
+
+    .registry-hash {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent-purple);
+    }
+
+    .registry-actions-col {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Floating AI Assistant overlay styling */
+    .ai-assistant-wrapper {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 16px;
+    }
+
+    .ai-btn-floating {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-purple) 100%);
+      color: white;
+      border: none;
+      box-shadow: 0 8px 24px rgba(232, 65, 66, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .ai-btn-floating:hover {
+      transform: scale(1.08) rotate(5deg);
+      box-shadow: 0 10px 30px rgba(232, 65, 66, 0.5);
+    }
+
+    .ai-btn-floating svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
+    .ai-chat-window {
+      width: 380px;
+      height: 520px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-lg);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      animation: chatOpen 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      border-bottom: 2px solid var(--accent);
+    }
+
+    @keyframes chatOpen {
+      from { opacity: 0; transform: translateY(20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .ai-chat-header {
+      background: var(--bg-panel-light);
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .ai-chat-header-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ai-chat-header-title span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--success);
+      display: inline-block;
+      box-shadow: 0 0 6px var(--success);
+    }
+
+    .ai-chat-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+    }
+
+    .ai-chat-close:hover {
+      color: var(--text);
+      background-color: rgba(255,255,255,0.05);
+    }
+
+    .ai-chat-close svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    .ai-chat-messages {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .chat-msg {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+
+    .chat-msg.assistant {
+      background-color: var(--bg-panel-light);
+      align-self: flex-start;
+      border-bottom-left-radius: 2px;
+      color: var(--text);
+    }
+
+    .chat-msg.user {
+      background-color: var(--accent);
+      align-self: flex-end;
+      border-bottom-right-radius: 2px;
+      color: white;
+    }
+
+    .ai-chat-presets {
+      padding: 10px 16px;
+      background: rgba(0,0,0,0.15);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .ai-chat-presets-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .ai-chat-presets-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .preset-btn {
+      background: var(--bg-panel-light);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.72rem;
+      color: var(--text);
+      cursor: pointer;
+      transition: var(--transition);
+      font-weight: 550;
+      text-align: left;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--accent);
+      background-color: rgba(232, 65, 66, 0.05);
+    }
+
+    .ai-chat-input-row {
+      display: flex;
+      padding: 12px 16px;
+      background: var(--bg-panel-light);
+      border-top: 1px solid var(--border);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .ai-chat-input {
+      flex-grow: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .ai-chat-input:focus {
+      border-color: var(--accent);
+    }
+
+    .ai-chat-send {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .ai-chat-send svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .spinner-loader {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Notification Toasts */
+    .toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 1100;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background: var(--bg-panel);
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      padding: 12px 20px;
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 600;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      border-top: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    @keyframes toastIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .toast.success {
+      border-left-color: var(--success);
+    }
+
+    .toast.info {
+      border-left-color: var(--accent-purple);
+    }
+
+    /* Media Responsive Layout adjustments */
+    @media (max-width: 1100px) {
+      .dashboard-grid {
         grid-template-columns: 1fr;
       }
-
-      .left, .right {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 18px;
+      .detail-grid {
+        grid-template-columns: 1fr;
       }
-
-      .panel + .panel {
-        margin-top: 0;
+      .registry-settings {
+        grid-template-columns: 1fr;
       }
     }
 
-    @media (max-width: 760px) {
-      .app {
-        padding: 14px;
-      }
-
-      .topbar {
-        align-items: flex-start;
+    @media (max-width: 768px) {
+      body {
         flex-direction: column;
-        padding-bottom: 14px;
       }
-
-      .actions {
+      .sidebar {
         width: 100%;
-        justify-content: stretch;
+        position: relative;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 16px;
       }
-
-      .actions .status, .actions button {
-        flex: 1 1 auto;
-      }
-
-      .brief-hero {
-        min-height: 360px;
+      .main-content {
+        margin-left: 0;
+        width: 100%;
         padding: 20px;
       }
-
-      .metrics, .brief-grid, .left, .right {
-        grid-template-columns: 1fr;
-      }
-
-      .audit-row {
-        grid-template-columns: 1fr;
+      .ai-chat-window {
+        width: 90vw;
+        right: 0;
       }
     }
   </style>
 </head>
 <body>
-  <main class="app">
-    <header class="topbar">
-      <div class="brand">
-        <div class="mark">TH</div>
-        <div>
-          <h1>Trend Hunter</h1>
-          <p>Real-time trends to ready-to-shoot entrepreneurial video scripts for Kenyan founders.</p>
+
+  <!-- Toast Notifications Wrapper -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <a href="#" class="brand" onclick="navigate('dashboard')">
+          <div class="brand-logo">TH</div>
+          <span class="brand-title">Trendjack Hunter</span>
+        </a>
+        
+        <ul class="nav-menu">
+          <li class="nav-item active" id="nav-dashboard">
+            <a onclick="navigate('dashboard')">
+              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+              Dashboard
+            </a>
+          </li>
+          <li class="nav-item" id="nav-livetrends">
+            <a onclick="navigate('livetrends')">
+              <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              Live Trends
+            </a>
+          </li>
+          <li class="nav-item" id="nav-contentbriefs">
+            <a onclick="navigate('contentbriefs')">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+              Content Briefs
+            </a>
+          </li>
+          <li class="nav-item" id="nav-registry">
+            <a onclick="navigate('registry')">
+              <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
+              Avalanche Registry
+            </a>
+          </li>
+          <li class="nav-item" id="nav-settings">
+            <a onclick="navigate('settings')">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+              Settings
+            </a>
+          </li>
+        </ul>
+      </div>
+      
+      <div class="sidebar-bottom">
+        <!-- Web3 Wallet Panel -->
+        <div class="wallet-card">
+          <div class="wallet-status-row">
+            <span class="wallet-status-label">
+              <span class="wallet-status-dot" id="walletDot"></span>
+              <span id="walletStatusText">Disconnected</span>
+            </span>
+            <span class="network-badge">Fuji Testnet</span>
+          </div>
+          <div class="wallet-address" id="walletAddressText">—</div>
+          <button class="wallet-btn" id="connectWalletBtn" onclick="connectWallet()">
+            <svg style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><path d="M20 12V8H6a2 2 0 013.5-1.5M20 12v4H6a2 2 0 003.5 1.5M20 12H8m12 0H4a2 2 0 01-2-2V6a2 2 0 012-2h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2v-4a2 2 0 012-2h16"/></svg>
+            <span>Connect Core</span>
+          </button>
+        </div>
+
+        <!-- Mock Web3 Mode Toggle -->
+        <div class="toggle-mode-container">
+          <span>Demo Wallet Mode</span>
+          <label class="switch">
+            <input type="checkbox" id="mockWeb3Toggle" checked onchange="toggleMockMode()">
+            <span class="slider"></span>
+          </label>
         </div>
       </div>
-      <div class="actions">
-        <div class="status" id="walletStatus"><span class="dot"></span><span>Wallet not connected</span></div>
-        <button class="secondary" id="connectBtn">Connect Core</button>
-        <button class="primary" id="anchorBtn" disabled>Register on Avalanche</button>
-      </div>
-    </header>
+    </aside>
 
-    <section class="layout">
-      <aside class="left">
-        <div class="panel">
-          <h2>Monitoring</h2>
-          <div class="sources">
-            <div class="source"><div class="source-icon">X</div><div><strong>X / Twitter</strong><span>startup, founder, SME, Kenya business</span></div><div class="pulse">Live</div></div>
-            <div class="source"><div class="source-icon">R</div><div><strong>Reddit</strong><span>r/startups, r/entrepreneur, r/SideProject</span></div><div class="pulse">Live</div></div>
-            <div class="source"><div class="source-icon">N</div><div><strong>Kenyan News</strong><span>Business Daily, Techweez, Nation, The Star</span></div><div class="pulse">Live</div></div>
-            <div class="source"><div class="source-icon">T</div><div><strong>TikTok</strong><span>#BusinessTok, #SideHustle, #KenyaBusiness</span></div><div class="pulse">Queued</div></div>
-          </div>
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- PAGE 1: DASHBOARD -->
+      <div id="page-dashboard" class="tab-page active">
+        <div class="page-header">
+          <div class="page-title-pre">Personalized priority engine</div>
+          <h2 class="page-title" id="dashboardGreeting">Good evening — here are your priority trends</h2>
+          <p class="page-description">Handpicked social anomalies breaking out in Kenya, optimized for local entrepreneurship creators.</p>
         </div>
 
-        <div class="panel">
-          <h2>Emerging Trends</h2>
-          <div class="queue">
-            <article class="queue-item active">
-              <div><strong>AI agent replacing interns</strong><span>Founder Culture · 8h old · 300k views</span></div>
-              <div class="scoreline"><div style="width: 86%"></div></div>
-            </article>
-            <article class="queue-item">
-              <div><strong>Kenyan SMEs selling on WhatsApp</strong><span>Business · 17h old · cross-platform</span></div>
-              <div class="scoreline"><div style="width: 72%"></div></div>
-            </article>
-            <article class="queue-item">
-              <div><strong>Founder salary transparency posts</strong><span>Money · 2d old · comments rising</span></div>
-              <div class="scoreline"><div style="width: 64%"></div></div>
-            </article>
-          </div>
-        </div>
-      </aside>
-
-      <section class="brief" aria-label="Ready-to-Shoot Brief">
-        <div class="brief-hero">
-          <div class="tag-row">
-            <span class="tag">Ready-to-Shoot Brief</span>
-            <span class="tag">Founder Culture</span>
-            <span class="tag">3-5 day lifespan</span>
-            <span class="tag">Score 86</span>
-          </div>
-          <h2>Everyone is arguing about AI replacing interns.</h2>
-          <p>Kenyan founders are asking the wrong question: what repetitive work can AI remove so interns create more value?</p>
-          <div class="brief-actions">
-            <button class="primary" id="generateBtn">Generate Content Brief</button>
-            <span class="generated-state" id="generatedState">Trend selected from live feed</span>
-          </div>
-        </div>
-
-        <div class="brief-body" id="generatedBrief" hidden>
-          <div class="metrics">
-            <div class="metric"><span class="label">Kenya Relevance</span><strong>92%</strong></div>
-            <div class="metric"><span class="label">SME Impact</span><strong>High</strong></div>
-            <div class="metric"><span class="label">Founder Fit</span><strong>Strong</strong></div>
-            <div class="metric"><span class="label">Publish By</span><strong>30 min</strong></div>
+        <div class="dashboard-grid">
+          <!-- Section A: Priority Trend Feed -->
+          <div class="priority-feed-container">
+            <h3 style="font-family:'Outfit', sans-serif; font-size:1.1rem; margin-bottom:14px; display:flex; align-items:center; gap:8px">
+              <svg style="width:18px;height:18px;color:var(--accent)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              High Relevance Priority Feed
+            </h3>
+            <div class="priority-feed" id="priorityFeed">
+              <!-- Instantiated by JS -->
+            </div>
           </div>
 
-          <div class="brief-grid">
-            <div>
-              <div class="section">
-                <span class="label">What is happening?</span>
-                <p>A startup founder posted a workflow showing an AI agent replacing repetitive intern tasks. The clip gained 300k views in 8 hours and triggered debate around entry-level jobs.</p>
+          <!-- Right Column -->
+          <div style="display:flex; flex-direction:column; gap:24px">
+            <!-- Section C: Alerts Panel -->
+            <div class="panel">
+              <div class="panel-header">
+                <div class="panel-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+                  Real-Time Pulse Alerts
+                </div>
+                <span class="badge" style="background:rgba(16, 185, 129, 0.1); color:var(--success)">System OK</span>
               </div>
-              <div class="section">
-                <span class="label">Why it matters for Kenyan founders</span>
-                <p>It hits a live tension: founders want leverage, young workers fear replacement, and the public wants practical examples of AI changing work.</p>
-              </div>
-              <div class="section">
-                <span class="label">Content Angle</span>
-                <p>Shift the debate from replacing people to multiplying productivity inside Kenyan startups and SMEs.</p>
-              </div>
-              <div class="section">
-                <span class="label">Remix Template</span>
-                <div class="remix-list">
-                  <span>AI replacing marketers</span>
-                  <span>AI replacing assistants</span>
-                  <span>AI replacing accountants</span>
-                  <span>AI replacing sales reps</span>
+              <div class="alerts-list">
+                <div class="alert-item">
+                  <div class="alert-indicator pulse"></div>
+                  <div class="alert-details">
+                    <span class="alert-text">New trend detected: M-Pesa API cost updates</span>
+                    <span class="alert-time">5 mins ago · Entrepreneurship</span>
+                  </div>
+                </div>
+                <div class="alert-item">
+                  <div class="alert-indicator pulse warning"></div>
+                  <div class="alert-details">
+                    <span class="alert-text">Trend entering peak phase: AI agent replacing interns</span>
+                    <span class="alert-time">1 hour ago · Founder Culture</span>
+                  </div>
+                </div>
+                <div class="alert-item">
+                  <div class="alert-indicator pulse accent"></div>
+                  <div class="alert-details">
+                    <span class="alert-text">High relevance to Kenyan founders detected: SME WhatsApp Selling</span>
+                    <span class="alert-time">4 hours ago · Business</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div>
-              <div class="section">
-                <span class="label">45 Second Script</span>
-                <div class="script">Everyone is arguing about AI replacing interns.
-
-But that's not the real opportunity.
-
-If you're a founder, the goal isn't replacing people. The goal is removing repetitive work.
-
-Imagine your intern spending six hours copying spreadsheets. An AI agent can do that instantly.
-
-Now your intern focuses on sales, customer interviews and growth.
-
-The winners won't be founders who replace people. The winners will be founders who multiply productivity.</div>
+            <!-- Mini stats card -->
+            <div class="panel" style="background: linear-gradient(135deg, #111629 0%, #080a14 100%)">
+              <div style="font-size:0.8rem; text-transform:uppercase; color:var(--text-muted); font-weight:700">Quick Stats</div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px">
+                <div>
+                  <div style="font-size:1.8rem; font-family:'Outfit',sans-serif; font-weight:800; color:var(--accent)">4</div>
+                  <div style="font-size:0.75rem; color:var(--text-muted)">Monitored Channels</div>
+                </div>
+                <div>
+                  <div style="font-size:1.8rem; font-family:'Outfit',sans-serif; font-weight:800; color:var(--accent-purple)">99%</div>
+                  <div style="font-size:0.75rem; color:var(--text-muted)">Signal Reliability</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
 
-      <aside class="right">
-        <div class="panel">
-          <h2>Trend Score</h2>
-          <div class="formula">
-            <div class="formula-row"><span>Engagement velocity</span><strong>0.5</strong></div>
-            <div class="formula-row"><span>Cross-platform mentions</span><strong>0.3</strong></div>
-            <div class="formula-row"><span>Search growth</span><strong>0.2</strong></div>
+        <!-- Section B: Trending Now Strip -->
+        <div class="trending-now-container" style="margin-top:40px">
+          <h3 style="font-family:'Outfit', sans-serif; font-size:1.1rem; display:flex; align-items:center; gap:8px">
+            <svg style="width:18px;height:18px;color:var(--accent-purple)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"/></svg>
+            Trending Now Strip
+          </h3>
+          <div class="trending-strip-scroll" id="trendingStrip">
+            <!-- Instantiated by JS -->
           </div>
-          <div class="stage">
-            <span class="active">Emerging</span>
-            <span>Growing</span>
-            <span>Peak</span>
-            <span>Declining</span>
+        </div>
+      </div>
+
+
+      <!-- PAGE 2: LIVE TRENDS -->
+      <div id="page-livetrends" class="tab-page">
+        <div class="page-header">
+          <div class="page-title-pre">Real-time signal feed</div>
+          <h2 class="page-title">Live Trend Discovery</h2>
+          <p class="page-description">Filter and explore rising digital anomalies across multiple platforms with high relevance scoring.</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label class="filter-label" for="filterCategory">Category</label>
+            <select class="filter-select" id="filterCategory" onchange="applyFilters()">
+              <option value="all">All Categories</option>
+              <option value="Founder Culture">Founder Culture</option>
+              <option value="Business">Business</option>
+              <option value="Money">Money</option>
+              <option value="Entrepreneurship">Entrepreneurship</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label" for="filterPlatform">Platform</label>
+            <select class="filter-select" id="filterPlatform" onchange="applyFilters()">
+              <option value="all">All Platforms</option>
+              <option value="x">X (Twitter)</option>
+              <option value="tiktok">TikTok</option>
+              <option value="reddit">Reddit</option>
+              <option value="news">News</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label" for="filterStage">Trend Stage</label>
+            <select class="filter-select" id="filterStage" onchange="applyFilters()">
+              <option value="all">All Stages</option>
+              <option value="Emerging">Emerging</option>
+              <option value="Growing">Growing</option>
+              <option value="Peak">Peak</option>
+              <option value="Declining">Declining</option>
+            </select>
           </div>
         </div>
 
-        <div class="panel">
-          <h2>Fuji Registry</h2>
-          <div class="audit">
-            <div class="audit-row"><span>Trend ID</span><strong id="trendId">x-ai-interns-ke-001</strong></div>
-            <div class="audit-row"><span>Trend Hash</span><strong id="trendHash">Generated in browser</strong></div>
-            <div class="audit-row"><span>Brief Hash</span><strong id="briefHash">ipfs://bafy-ready-to-shoot-brief</strong></div>
-            <div class="audit-row"><span>Contract</span><strong id="contractState">Set address to enable write</strong></div>
+        <!-- Trend Grid -->
+        <div class="trends-grid" id="trendsGrid">
+          <!-- Instantiated by JS -->
+        </div>
+      </div>
+
+
+      <!-- PAGE 3: TREND DETAIL PAGE -->
+      <div id="page-detail" class="tab-page">
+        <div class="page-header">
+          <button class="btn btn-secondary" onclick="navigate('livetrends')" style="padding:6px 12px; font-size:0.8rem; margin-bottom:12px">
+            ← Back to Live Trends
+          </button>
+          <div class="page-title-pre" id="detailCategoryPre">Founder Culture</div>
+          <h2 class="page-title" id="detailTitle">Everyone is arguing about AI replacing interns.</h2>
+          <p class="page-description" id="detailSummaryText">A Nairobi founder posted a workflow showing an AI agent replacing repetitive intern tasks, triggering viral conversations.</p>
+        </div>
+
+        <div class="detail-grid">
+          <!-- Left Column: What is happening & metadata -->
+          <div class="detail-left">
+            <div class="panel">
+              <div class="panel-header">
+                <div class="panel-title">What is happening</div>
+              </div>
+              <div class="detail-value" id="detailHappeningText" style="color:var(--text-muted)">
+                A startup founder posted a workflow showing an AI agent replacing repetitive intern tasks. The clip gained 300k views in 8 hours and triggered debate around entry-level jobs.
+              </div>
+              <div style="display:flex; flex-direction:column; gap:12px; border-top:1px solid var(--border); padding-top:16px; margin-top:8px">
+                <div class="detail-info-block">
+                  <span class="detail-label">First Seen</span>
+                  <div class="detail-value" id="detailFirstSeen">10 hours ago</div>
+                </div>
+                <div class="detail-info-block">
+                  <span class="detail-label">Trend Stage</span>
+                  <div class="detail-value" id="detailStage">Growing</div>
+                </div>
+                <div class="detail-info-block">
+                  <span class="detail-label">Platforms Involved</span>
+                  <div id="detailPlatforms" style="display:flex; gap:8px; margin-top:4px">
+                    <!-- Platforms icons inserted by JS -->
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="contract-box">
-            <input id="contractInput" placeholder="Paste deployed TrendRegistry address" autocomplete="off" />
-            <div class="log" id="log">> Ready. Generate the brief, connect Core Wallet on Fuji, paste the contract address, then register the trend.</div>
+
+          <!-- Center Column: Media Carousel -->
+          <div class="detail-center">
+            <div class="panel">
+              <div class="panel-header">
+                <div class="panel-title">Interactive Media Evidence</div>
+              </div>
+              <div class="carousel-container">
+                <div class="carousel-slides" id="carouselSlides">
+                  <!-- Carousel slides populated by JS -->
+                </div>
+                <div class="carousel-controls">
+                  <button class="btn btn-secondary" onclick="prevCarouselSlide()" style="padding:4px 8px; font-size:0.75rem">Prev</button>
+                  <div class="carousel-dots" id="carouselDots">
+                    <!-- Dots generated by JS -->
+                  </div>
+                  <button class="btn btn-secondary" onclick="nextCarouselSlide()" style="padding:4px 8px; font-size:0.75rem">Next</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: AI Explanation & relevance -->
+          <div class="detail-right">
+            <div class="panel">
+              <div class="panel-header">
+                <div class="panel-title">AI Engine Analysis</div>
+              </div>
+              <div class="detail-info-block">
+                <span class="detail-label">Why it is trending</span>
+                <div class="detail-value" id="detailWhyTrending" style="color:var(--text-muted)">The rising accessibility of low-code AI agents matches local youth unemployment anxiety.</div>
+              </div>
+              <div class="detail-info-block">
+                <span class="detail-label">Emotional Trigger</span>
+                <div class="detail-value" id="detailEmotionalTrigger" style="color:var(--text-muted)">Fear of displacement, excitement for automation.</div>
+              </div>
+              <div class="detail-info-block">
+                <span class="detail-label">Social Trigger</span>
+                <div class="detail-value" id="detailSocialTrigger" style="color:var(--text-muted)">Status signaling, career anxiety debates.</div>
+              </div>
+              <div class="detail-info-block">
+                <span class="detail-label">Kenyan Relevance Score</span>
+                <div style="display:flex; align-items:center; gap:12px; margin-top:4px">
+                  <div style="font-size:2rem; font-family:'Outfit',sans-serif; font-weight:800; color:var(--accent)" id="detailRelevanceNum">94%</div>
+                  <div style="font-size:0.75rem; color:var(--text-muted)">Nairobi Tech density multiplier applied.</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="detail-actions-row">
+              <button class="btn btn-primary" id="detailBtnGenerate" onclick="triggerGenerateBriefFromDetail()">Generate Content Brief</button>
+              <button class="btn btn-secondary" id="detailBtnRegister" onclick="triggerRegisterFromDetail()">Register on Avalanche</button>
+            </div>
           </div>
         </div>
-      </aside>
-    </section>
-  </main>
+      </div>
 
+
+      <!-- PAGE 4: CONTENT BRIEF PAGE -->
+      <div id="page-contentbriefs" class="tab-page">
+        <div class="page-header">
+          <div class="page-title-pre">Publish-Ready Output</div>
+          <h2 class="page-title">Content Brief Generator</h2>
+          <p class="page-description">Optimized hooks, scripts, and angles ready to shoot in under 2 minutes.</p>
+        </div>
+
+        <div class="brief-container">
+          <!-- Section 1: Trend Summary -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+                Section 1: Trend Snapshot
+              </div>
+              <span class="badge" id="briefCategoryBadge">Founder Culture</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:20px">
+              <div>
+                <span class="detail-label">What is happening</span>
+                <div class="detail-value" id="briefHappeningText">Founder automates data scraping and intern roles.</div>
+              </div>
+              <div>
+                <span class="detail-label">Why it is spreading</span>
+                <div class="detail-value" id="briefWhySpreading">Triggering employment debate on Kenyan Tech-Twitter.</div>
+              </div>
+              <div>
+                <span class="detail-label">Estimated Lifespan</span>
+                <div class="detail-value" id="briefLifespanText">3-5 days</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Kuzana Angle -->
+          <div class="brief-card-highlight">
+            <div class="brief-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 113.536 0V21h2v-5.657a5 5 0 013.536 0"/></svg>
+              Section 2: The <span class="kuzana-title">Kuzana Angle</span> (Local Kenyan Founder Lens)
+            </div>
+            <p id="briefKuzanaText" style="line-height:1.6; font-size:0.95rem; font-weight:500">
+              Don't hire interns to do boring copy-paste work that AI can do in seconds. Hire them to talk to your customers. If your startup is using interns as manual databases, you are failing them and your business. Automate the boring, humanize the rest.
+            </p>
+          </div>
+
+          <!-- Section 3: Hooks -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.907c.961 0 1.371 1.24.588 1.81l-3.97 2.883a1 1 0 00-.364 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.971-2.883a1 1 0 00-1.17 0l-3.97 2.883c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.364-1.118L2.98 10.1c-.783-.57-.38-1.81.588-1.81h4.906a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+                Section 3: Viral Hooks (Kenyan SMB/Founder Context)
+              </div>
+              <span class="badge" style="background:rgba(232, 65, 66, 0.1); color:var(--accent)">Copy Ready</span>
+            </div>
+            <div class="hooks-list" id="briefHooksList">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+
+          <!-- Section 4: Script Generator -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l5.553-2.776A1 1 0 0122 8.118v7.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                Section 4: 30-60s Ready-to-Shoot Video Script
+              </div>
+              <div style="display:flex; gap:8px">
+                <button class="btn btn-secondary" onclick="regenerateScript()" style="padding:6px 12px; font-size:0.8rem; display:flex; align-items:center; gap:6px">
+                  <span id="regenSpinner" class="spinner-loader" style="display:none"></span>
+                  <svg id="regenIcon" style="width:14px;height:14px" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17"/></svg>
+                  <span id="regenText">Regenerate</span>
+                </button>
+                <button class="btn btn-primary" onclick="copyEntireScript()" style="padding:6px 12px; font-size:0.8rem">Copy Entire Script</button>
+              </div>
+            </div>
+            <div class="script-box-container">
+              <div class="script-box-header">
+                <span style="font-size:0.8rem; color:var(--text-muted); font-weight:600">Video Format: Portrait TikTok/Reels/Shorts</span>
+                <span class="badge" style="background:rgba(16, 185, 129, 0.1); color:var(--success)">High-Convert Script</span>
+              </div>
+              <div class="script-box-body" id="briefScriptBody">
+                <!-- Rendered dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 5: Remix Template -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5a1 1 0 01.3-2.9L7.3 5H13a3 3 0 013 3v10m-4 4h7a1 1 0 00.9-.3l2.8-2.9m-11 3v-5a3 3 0 00-3-3H3"/></svg>
+                Section 5: Remix Template
+              </div>
+            </div>
+            <div class="remix-flow" id="briefRemixFlow">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- PAGE 5: AVALANCHE REGISTRY -->
+      <div id="page-registry" class="tab-page">
+        <div class="page-header">
+          <div class="page-title-pre">Verifiable On-Chain Layer</div>
+          <h2 class="page-title">Avalanche Fuji Registry</h2>
+          <p class="page-description">Register verified trend signals and AI brief hashes on the Avalanche C-Chain to establish timestamp proof of first discovery.</p>
+        </div>
+
+        <div class="registry-settings">
+          <!-- Contract address input -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Smart Contract Interaction</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="registryContractAddress">Deployed TrendRegistry Address</label>
+              <div class="form-input-container">
+                <input class="form-input" id="registryContractAddress" type="text" value="0xE2D5bD9856A9e315024476B0B68C1C89F3f389D6" placeholder="0x..." />
+                <button class="btn btn-secondary" onclick="verifyContractConnection()" style="padding:0 16px">Verify</button>
+              </div>
+              <span style="font-size:0.75rem; color:var(--text-muted)">
+                Compile & deploy contracts: <code>npm run deploy:fuji</code>. Paste address to enable on-chain writes.
+              </span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:16px">
+              <div>
+                <span class="detail-label" style="margin-bottom:2px">First-Seen Claims</span>
+                <span style="font-size:1.15rem; font-family:'Outfit',sans-serif; font-weight:800; color:var(--success)" id="registryTotalClaims">0</span>
+              </div>
+              <button class="btn btn-primary" id="btnRegisterActive" onclick="registerActiveTrendOnChain()" disabled>
+                Register Active Trend
+              </button>
+            </div>
+          </div>
+
+          <!-- Logs window -->
+          <div class="panel">
+            <div class="console-box">
+              <div class="console-header">
+                <span>Avalanche Dev Logs</span>
+                <span style="color:var(--text-muted); cursor:pointer" onclick="clearLogs()">Clear</span>
+              </div>
+              <div class="console-logs" id="consoleLogs">
+                [SYSTEM] Ready. Connect Core Wallet, paste contract, or toggle Demo Wallet Mode to test registers.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table View -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">On-Chain Registry Log Table</div>
+            <span class="badge" style="background:rgba(232, 65, 66, 0.1); color:var(--accent)">Avalanche C-Chain Verified</span>
+          </div>
+          <div class="table-container">
+            <table class="registry-table">
+              <thead>
+                <tr>
+                  <th>Trend ID</th>
+                  <th>Trend Title</th>
+                  <th>Category</th>
+                  <th>Score</th>
+                  <th>Fuji Tx Hash</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="registryTableBody">
+                <!-- Data populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- PAGE 6: SETTINGS -->
+      <div id="page-settings" class="tab-page">
+        <div class="page-header">
+          <div class="page-title-pre">System adjustments</div>
+          <h2 class="page-title">Settings</h2>
+          <p class="page-description">Adjust Web3 RPC providers, developer options, and customize generation filters.</p>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Developer Config</div>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Avalanche RPC Endpoint</label>
+              <input class="form-input" value="https://api.avax-test.network/ext/bc/C/rpc" readonly />
+            </div>
+
+            <div class="form-group" style="margin-top:10px">
+              <label class="form-label">Smart Contract ABI (Subset)</label>
+              <textarea class="form-input" style="font-family:'JetBrains Mono',monospace; font-size:0.75rem; height:100px; resize:none" readonly>
+function registerTrend(string trendId, bytes32 trendHash, string title, string category, uint256 score, string briefHash) external
+              </textarea>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">System Information</div>
+            </div>
+            <div class="detail-info-block">
+              <span class="detail-label">App Mode</span>
+              <div class="detail-value" style="color:var(--success)">Production Ready (Front-End MVP)</div>
+            </div>
+            <div class="detail-info-block">
+              <span class="detail-label">Avalanche Fuji Network ID</span>
+              <div class="detail-value">43113</div>
+            </div>
+            <div class="detail-info-block">
+              <span class="detail-label">Contributor Node Reputation</span>
+              <div class="detail-value" id="settingsReputation">0 points</div>
+            </div>
+            <div style="border-top:1px solid var(--border); padding-top:16px">
+              <button class="btn btn-secondary" onclick="resetAppDatabase()" style="width:100%; border-color:rgba(239, 68, 68, 0.4); color:#ef4444">
+                Reset Local Storage Database
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Global Floating AI Assistant -->
+    <div class="ai-assistant-wrapper">
+      <!-- Chat Pane -->
+      <div class="ai-chat-window" id="aiChatWindow">
+        <div class="ai-chat-header">
+          <div class="ai-chat-header-title">
+            <span></span>
+            Trendjack AI Assistant
+          </div>
+          <button class="ai-chat-close" onclick="toggleChatWindow()">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        
+        <!-- Messages -->
+        <div class="ai-chat-messages" id="chatMessages">
+          <div class="chat-msg assistant">
+            Hi! I am the Trendjack AI Assistant. Ask me anything about the active trend, rewrite scripts, or adjust hooks for Kenyan founders.
+          </div>
+        </div>
+
+        <!-- Presets -->
+        <div class="ai-chat-presets">
+          <span class="ai-chat-presets-label">Prompt Presets (Context Aware)</span>
+          <div class="ai-chat-presets-grid">
+            <button class="preset-btn" onclick="triggerPreset('Why is this trending?')">Why trending?</button>
+            <button class="preset-btn" onclick="triggerPreset('Generate better hook')">Better hook</button>
+            <button class="preset-btn" onclick="triggerPreset('Shorten script')">Shorten script</button>
+            <button class="preset-btn" onclick="triggerPreset('Make it more Kenyan relevant')">Nairobi Slang Remix</button>
+            <button class="preset-btn" onclick="triggerPreset('Turn script into Twitter thread')">X Thread format</button>
+          </div>
+        </div>
+
+        <!-- Inputs -->
+        <div class="ai-chat-input-row">
+          <input class="ai-chat-input" id="chatInput" placeholder="Ask AI anything..." onkeydown="if(event.key==='Enter') sendChatMessage()" />
+          <button class="ai-chat-send" onclick="sendChatMessage()">
+            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Floating Button -->
+      <button class="ai-btn-floating" onclick="toggleChatWindow()">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Ethers v6 Library -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+
   <script>
+    // --- Global State ---
     const FUJI_CHAIN_ID = 43113;
-    const trendPayload = {
-      trendId: "x-ai-interns-ke-001",
-      title: "Founder posts AI agent replacing interns",
-      category: "Founder Culture",
-      score: 86,
-      briefHash: "ipfs://bafy-ready-to-shoot-brief"
-    };
-    const registryAbi = [
-      "function registerTrend(string trendId,bytes32 trendHash,string title,string category,uint256 score,string briefHash) external"
+    const contractAbi = [
+      "function registerTrend(string trendId, bytes32 trendHash, string title, string category, uint256 score, string briefHash) external",
+      "function contributorReputation(address) public view returns (uint256)",
+      "function getTrend(string trendId) external view returns (tuple(string trendId, bytes32 trendHash, string title, string category, uint256 firstSeen, uint256 score, string briefHash, bool verified, address contributor))"
     ];
 
-    const walletStatus = document.getElementById("walletStatus");
-    const connectBtn = document.getElementById("connectBtn");
-    const anchorBtn = document.getElementById("anchorBtn");
-    const generateBtn = document.getElementById("generateBtn");
-    const generatedBrief = document.getElementById("generatedBrief");
-    const generatedState = document.getElementById("generatedState");
-    const contractInput = document.getElementById("contractInput");
-    const contractState = document.getElementById("contractState");
-    const trendHashEl = document.getElementById("trendHash");
-    const logEl = document.getElementById("log");
+    let rawProvider = null;
+    let signer = null;
+    let walletConnected = false;
+    let isMockMode = true; // Defaulting to Mock Web3 Mode for seamless local previewing
+    let activeTrend = null;
+    let activeCarouselIndex = 0;
+    let savedTrends = new Set();
+    let currentScriptVariation = 1; // 1 or 2
 
-    let rawProvider;
-    let signer;
-    let briefGenerated = false;
-    let trendHash = "";
+    // --- Mock Database ---
+    const mockTrends = [
+      {
+        trendId: "x-ai-interns-ke-001",
+        title: "Founder posts AI agent replacing interns",
+        category: "Founder Culture",
+        score: 86,
+        lifespan: "3-5 days",
+        velocity: "+140% in last 12h",
+        stage: "Growing",
+        platforms: ["x", "reddit", "news"],
+        shortSummary: "A startup founder shared a screen recording of an AI agent automating cold outreach, data entry, and PDF parsing, claiming it replaces two interns.",
+        firstSeen: "10 hours ago",
+        relevance: 94,
+        happeningText: "A startup founder posted a workflow showing an AI agent replacing repetitive intern tasks. The clip gained 300k views in 8 hours and triggered debate around entry-level jobs.",
+        whyTrending: "The rising accessibility of low-code AI agents matches local youth unemployment anxiety and startup cost constraints.",
+        emotionalTrigger: "Fear of job loss for grads vs excitement of developer leverage for founders.",
+        socialTrigger: "Anxiety around junior dev jobs in Nairobi and career pathways.",
+        kuzanaAngle: "Don't hire interns to do boring copy-paste work that AI can do in seconds. Hire them to talk to your customers. If your startup is using interns as manual databases, you are failing them and your business. Automate the boring, humanize the rest.",
+        previewHtml: `
+          <div class="mock-tweet">
+            <div class="tweet-header">
+              <div class="tweet-avatar">MK</div>
+              <div class="tweet-userinfo">
+                <span class="tweet-name">Muga Kamau <svg class="tweet-verified-svg" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
+                <span class="tweet-handle">@mugakamau · 8h</span>
+              </div>
+            </div>
+            <div class="tweet-body">
+              I just deployed a custom cursor agent to handle all our CRM data-entry and LinkedIn scraping. Cost: $20/mo. Saved: 40 hours of intern work. This is the new baseline for startups in Nairobi. Adapt or get left behind.
+            </div>
+            <div class="tweet-footer">
+              <span>💬 112</span>
+              <span>🔄 480</span>
+              <span>❤️ 2.1k</span>
+            </div>
+          </div>
+        `,
+        carouselSlides: [
+          {
+            type: "Tweet",
+            title: "Muga Kamau's original post",
+            content: `
+              <div class="mock-tweet" style="background:rgba(255,255,255,0.01)">
+                <div class="tweet-header">
+                  <div class="tweet-avatar">MK</div>
+                  <div class="tweet-userinfo">
+                    <span class="tweet-name">Muga Kamau <svg class="tweet-verified-svg" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
+                    <span class="tweet-handle">@mugakamau</span>
+                  </div>
+                </div>
+                <div class="tweet-body" style="font-size:0.9rem">
+                  I just deployed a custom cursor agent to handle all our CRM data-entry and LinkedIn scraping. Cost: $20/mo. Saved: 40 hours of intern work. This is the new baseline for startups in Nairobi. Adapt or get left behind.
+                </div>
+                <div class="tweet-footer">
+                  <span>💬 112 Replies</span>
+                  <span>🔄 480 Retweets</span>
+                  <span>❤️ 2.1k Likes</span>
+                </div>
+              </div>
+            `
+          },
+          {
+            type: "Reddit Thread",
+            title: "r/Kenya debate on tech entry-level jobs",
+            content: `
+              <div class="mock-reddit">
+                <div class="reddit-header">
+                  <div class="reddit-logo">r</div>
+                  <span>r/Kenya · Posted by u/kilimani_dev 5h ago</span>
+                </div>
+                <div class="reddit-body">Is it even worth applying for internships in Nairobi now?</div>
+                <div class="reddit-post-preview">
+                  "I was rejected from three tech startups this month. One of them told me they are freezing internship intakes because their core devs automated manual scraping and data pipelines using LLMs. How do we get experience if they automate the entry level?"
+                </div>
+                <div class="reddit-footer">
+                  <span>🔺 189 Upvotes</span>
+                  <span>💬 342 Comments</span>
+                </div>
+              </div>
+            `
+          },
+          {
+            type: "TikTok",
+            title: "Short clip: POV intern replacement",
+            content: `
+              <div class="mock-tiktok">
+                <div class="tiktok-cover">
+                  <div class="tiktok-cover-pattern" style="background-image:linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=400&q=80')"></div>
+                  <div class="tiktok-play-btn">
+                    <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  </div>
+                  <div class="tiktok-creator">@nairobibyte</div>
+                  <div class="tiktok-caption">Interns watching their boss install an AI agent for $20... 💀 #NairobiTech #CareerAdvice</div>
+                  <div class="tiktok-stats">
+                    <div class="tiktok-stat-node"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>45.2k</div>
+                  </div>
+                </div>
+              </div>
+            `
+          }
+        ],
+        hooks: [
+          "Stop hiring interns to copy-paste spreadsheet data. Do this instead.",
+          "Nairobi startups are replacing interns with $20 AI agents. Let's talk about the truth.",
+          "If your internship doesn't teach you how to prompt AI, you are in deep trouble.",
+          "How to build a 10-person startup with only 2 people in Kenya.",
+          "The one skill that will save Kenyan graduates from AI replacement in 2026."
+        ],
+        script: {
+          v1: `[Hook] Nairobi founders are replacing interns with twenty-dollar AI agents. And honestly? They should.
+[Context] A viral tweet just showed a Nairobi startup automating all CRM entry and scraping. Interns are terrified, thinking their careers are over.
+[Insight] But here is the secret. If an intern's daily work was just copying data, it was a bad internship anyway. AI is freeing up young talent.
+[Takeaway] As a founder, don't use interns as manual scrapers. Automate that with AI. Let your interns run sales calls, talk to customers, and do real work.
+[CTA] Comment 'LEVERAGE' below and I'll send you our team's internal AI automation playbook.`,
+          v2: `[Hook] The era of the copy-paste internship is dead in Kenya. AI killed it this week.
+[Context] There's a massive debate online because Nairobi founders are sharing workflows of AI agents doing 40 hours of data entries.
+[Insight] Don't panic. If an LLM can replace your entire job, it means you were being underutilized.
+[Takeaway] Startups that win in Nairobi won't be the ones that fire people. It will be the ones who train interns to prompt agents, scale output, and build actual products.
+[CTA] Drop a comment with 'UPGRADE' and I'll send you a list of 5 AI tools every Nairobi grad needs to master.`
+        },
+        remix: {
+          format: "AI replacing data entry",
+          interpretation: "Shift interns to customer sales",
+          lesson: "Focus on communication skills over manual labor"
+        }
+      },
+      {
+        trendId: "sme-whatsapp-ke-002",
+        title: "Kenyan SMEs selling on WhatsApp Catalog APIs",
+        category: "Business",
+        score: 94,
+        lifespan: "1-2 weeks",
+        velocity: "+320% this week",
+        stage: "Peak",
+        platforms: ["tiktok", "news", "x"],
+        shortSummary: "SMEs in Nairobi and Mombasa are bypassing standard e-commerce websites entirely, using WhatsApp Business automation and catalog APIs linked with M-Pesa Till numbers.",
+        firstSeen: "2 days ago",
+        relevance: 98,
+        happeningText: "SMEs in Nairobi and Mombasa are bypassing standard e-commerce websites entirely, using WhatsApp Business automation and catalog APIs linked with M-Pesa Till numbers.",
+        whyTrending: "Mobile internet users in Kenya prioritize WhatsApp data bundles. WhatsApp storefronts reduce friction to zero.",
+        emotionalTrigger: "Ease, empowerment, and frustration with heavy website costs.",
+        socialTrigger: "Shareable success stories of micro-businesses doubling sales.",
+        kuzanaAngle: "Stop wasting 50,000 KES building an e-commerce website that no one will visit because of loading times and data bundles. Put your storefront where your customers live: WhatsApp. Build a catalog, link it to a Till, and automate the chat.",
+        previewHtml: `
+          <div class="mock-tiktok">
+            <div class="tiktok-cover">
+              <div class="tiktok-cover-pattern" style="background-image:linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1542435503-956c469947f6?auto=format&fit=crop&w=400&q=80')"></div>
+              <div class="tiktok-play-btn">
+                <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              </div>
+              <div class="tiktok-creator">@wanjiku_hustles</div>
+              <div class="tiktok-caption">How I automated my shop to run 24/7 on WhatsApp! 🤫 #NairobiBusiness #Mpesa</div>
+              <div class="tiktok-stats">
+                <div class="tiktok-stat-node"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>12.8k</div>
+              </div>
+            </div>
+          </div>
+        `,
+        carouselSlides: [
+          {
+            type: "TikTok",
+            title: "Wanjiku's Business Automation Video",
+            content: `
+              <div class="mock-tiktok">
+                <div class="tiktok-cover">
+                  <div class="tiktok-cover-pattern" style="background-image:linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1542435503-956c469947f6?auto=format&fit=crop&w=400&q=80')"></div>
+                  <div class="tiktok-play-btn">
+                    <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  </div>
+                  <div class="tiktok-creator">@wanjiku_hustles</div>
+                  <div class="tiktok-caption">How I automated my shop to run 24/7 on WhatsApp! 🤫 #NairobiBusiness #Mpesa</div>
+                  <div class="tiktok-stats">
+                    <div class="tiktok-stat-node"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>12.8k</div>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            type: "News Headline",
+            title: "Techweez Feature Article",
+            content: `
+              <div class="mock-news">
+                <span class="news-tag">E-Commerce</span>
+                <h4 class="news-title">Why Nairobi CBD Wholesalers are Bypassing Shopify for WhatsApp Catalogs</h4>
+                <div class="news-source">
+                  <span>Techweez News</span>
+                  <span>2 days ago</span>
+                </div>
+              </div>
+            `
+          }
+        ],
+        hooks: [
+          "Stop building Shopify websites for Kenyan customers. Do this instead.",
+          "How a Kamukunji shop owner makes 100k a week without a website.",
+          "Why WhatsApp Business is crushing standard e-commerce in Nairobi.",
+          "The secret to 24/7 sales on WhatsApp using M-Pesa integration.",
+          "How to save 50k on website maintenance and sell directly in chat."
+        ],
+        script: {
+          v1: `[Hook] If you are spending fifty thousand shillings to build a website for your Kenyan business, you are throwing money away.
+[Context] The smart business owners in Kamukunji and Nairobi CBD aren't using e-commerce websites. They are building directly on WhatsApp Business.
+[Insight] Why? Because your customer doesn't want to load a heavy website. They have WhatsApp data bundles. WhatsApp catalog plus M-Pesa is zero-friction.
+[Takeaway] Put your storefront where your customer is already chatting. Set up a WhatsApp catalog, automate responses, and add your M-Pesa Till.
+[CTA] Want to see how to connect M-Pesa to WhatsApp? Drop a comment below and I'll send you a step-by-step guide.`,
+          v2: `[Hook] You don't need a fancy developer to start selling online in Kenya. All you need is WhatsApp.
+[Context] Kamukunji entrepreneurs are reporting 2x sales conversions by moving catalogs from websites to WhatsApp Business APIs.
+[Insight] It reduces purchase steps from six down to two. Click link, send pre-filled message, pay Till. Done.
+[Takeaway] Run ads that open a WhatsApp chat directly, instead of forcing a page redirect.
+[CTA] Comment 'CATALOG' and I will send you the API connection documentation.`
+        },
+        remix: {
+          format: "Standard e-commerce website",
+          interpretation: "WhatsApp catalog + M-Pesa",
+          lesson: "Zero friction customer experience beats fancy websites"
+        }
+      },
+      {
+        trendId: "founder-salaries-ke-003",
+        title: "Founder salary transparency posts",
+        category: "Money",
+        score: 78,
+        lifespan: "1-2 days",
+        velocity: "+85% today",
+        stage: "Peak",
+        platforms: ["x", "reddit"],
+        shortSummary: "A trending debate where early-stage founders in Nairobi are sharing their actual monthly salaries, revealing the lean realities of startup bootstrapping.",
+        firstSeen: "18 hours ago",
+        relevance: 89,
+        happeningText: "A trending debate where early-stage founders in Nairobi are sharing their actual monthly salaries, revealing the lean realities of startup bootstrapping.",
+        whyTrending: "Demystifies the glamorous tech startup myth, highlighting the real struggles of building in Nairobi.",
+        emotionalTrigger: "Empathy, validation, and relief from impostor syndrome.",
+        socialTrigger: "Community support and alignment on VC compensation expectations.",
+        kuzanaAngle: "There's no shame in paying yourself 70,000 KES as a founder. In fact, if you pay yourself too much early on, you're killing your company's runway. Live lean, hire great talent, and win long-term.",
+        previewHtml: `
+          <div class="mock-reddit">
+            <div class="reddit-header">
+              <div class="reddit-logo">r</div>
+              <span>r/Kenya · Posted by u/nairobi_bootstrapper 18h ago</span>
+            </div>
+            <div class="reddit-body">Surviving on 70k KES/mo as pre-seed tech founder in Kilimani</div>
+            <div class="reddit-post-preview">
+              "Real talk: I'm paying myself 70k. My rent is half of that. How are other founders surviving before PMF? We shouldn't raise VC just to buy high-end cars..."
+            </div>
+            <div class="reddit-footer">
+              <span>🔺 425 Upvotes</span>
+              <span>💬 112 Comments</span>
+            </div>
+          </div>
+        `,
+        carouselSlides: [
+          {
+            type: "Reddit",
+            title: "Reddit Thread",
+            content: `
+              <div class="mock-reddit">
+                <div class="reddit-header">
+                  <div class="reddit-logo">r</div>
+                  <span>r/Kenya · Posted by u/nairobi_bootstrapper 18h ago</span>
+                </div>
+                <div class="reddit-body">Surviving on 70k KES/mo as pre-seed tech founder in Kilimani</div>
+                <div class="reddit-post-preview">
+                  "Real talk: I'm paying myself 70k. My rent is half of that. How are other founders surviving before PMF? We shouldn't raise VC just to buy high-end cars..."
+                </div>
+                <div class="reddit-footer">
+                  <span>🔺 425 Upvotes</span>
+                  <span>💬 112 Comments</span>
+                </div>
+              </div>
+            `
+          }
+        ],
+        hooks: [
+          "The real salary of a Nairobi startup founder will shock you.",
+          "Why your lead developer should be earning more than you.",
+          "How to survive on a bootstrapper's salary in Nairobi.",
+          "The pre-seed salary trap: how much should you pay yourself?",
+          "Nairobi founders are revealing their salaries, and it's a reality check."
+        ],
+        script: {
+          v1: `[Hook] The glamorous tech startup founder you see on LinkedIn? They might be earning less than their junior designer.
+[Context] There is a huge debate online right now with Nairobi startup founders revealing their real salaries. Many are surviving on seventy thousand KES.
+[Insight] People think fundraising means you're rich. But pre-seed money is for product and runway, not for luxury living in Kilimani.
+[Takeaway] Pay yourself just enough to survive. Every shilling you save extends your startup's life. The real payout comes when you scale.
+[CTA] What is a reasonable salary for a pre-seed founder in Kenya? Tell me your number in the comments!`,
+          v2: `[Hook] Stop bootstrap-shaming founders who live lean in Nairobi.
+[Context] Recent discussions show pre-seed founders paying themselves less than market rate to extend their business runway.
+[Insight] Capital efficiency is the ultimate survival tool. A founder who takes a massive salary before PMF is raising warning flags for investors.
+[Takeaway] Align incentives. Focus on equity over short-term salary.
+[CTA] Share this with a founder who needs to hear it.`
+        },
+        remix: {
+          format: "VC funding illusion",
+          interpretation: "Bootstrapping salary reality",
+          lesson: "Capital efficiency beats lifestyle signaling"
+        }
+      },
+      {
+        trendId: "mpesa-api-costs-ke-004",
+        title: "M-Pesa API transaction cost updates",
+        category: "Entrepreneurship",
+        score: 91,
+        lifespan: "5-7 days",
+        velocity: "+205% in 24h",
+        stage: "Emerging",
+        platforms: ["news", "x", "reddit"],
+        shortSummary: "Developers and fintech creators are analyzing new M-Pesa API transaction fee tiers, debating the impact on low-ticket micropayment services.",
+        firstSeen: "5 hours ago",
+        relevance: 99,
+        happeningText: "Developers and fintech creators are analyzing new M-Pesa API transaction fee tiers, debating the impact on low-ticket micropayment services.",
+        whyTrending: "Safaricom's M-Pesa pricing changes directly dictate the viability of local micro-SaaS and fintech startups.",
+        emotionalTrigger: "Frustration, fear of startup failure, and motivation to solve pricing bottlenecks.",
+        socialTrigger: "Developers sharing workarounds and optimizations.",
+        kuzanaAngle: "If your business model relies on charging 20 KES per transaction, Safaricom's new API tiers will eat your margins. Pivot to wallet systems or credit tokens. Don't fight Safaricom, build around them.",
+        previewHtml: `
+          <div class="mock-news">
+            <span class="news-tag">Fintech</span>
+            <h4 class="news-title">Safaricom Adjusts Daraja API Transaction Thresholds: Micropayments Pinched</h4>
+            <div class="news-source">
+              <span>Techweez Fintech</span>
+              <span>5h ago</span>
+            </div>
+          </div>
+        `,
+        carouselSlides: [
+          {
+            type: "News Banner",
+            title: "Techweez Fintech Coverage",
+            content: `
+              <div class="mock-news">
+                <span class="news-tag">Fintech</span>
+                <h4 class="news-title">Safaricom Adjusts Daraja API Transaction Thresholds: Micropayments Pinched</h4>
+                <div class="news-source">
+                  <span>Techweez Fintech</span>
+                  <span>5h ago</span>
+                </div>
+              </div>
+            `
+          },
+          {
+            type: "Developer Tweet",
+            title: "Fintech founder response thread",
+            content: `
+              <div class="mock-tweet">
+                <div class="tweet-header">
+                  <div class="tweet-avatar">AO</div>
+                  <div class="tweet-userinfo">
+                    <span class="tweet-name">Albert Ochieng</span>
+                    <span class="tweet-handle">@albert_codes · 4h</span>
+                  </div>
+                </div>
+                <div class="tweet-body">
+                  Safaricom's new Daraja pricing means a 20 KES utility micro-subscription is dead. The fee eats 25% of the transaction. We need to implement digital ledger credits immediately.
+                </div>
+              </div>
+            `
+          }
+        ],
+        hooks: [
+          "Safaricom just made a change that could kill your subscription startup overnight.",
+          "Why your 20 bob subscription startup is now in big trouble.",
+          "How to bypass high M-Pesa transaction costs using wallet credits.",
+          "The hidden cost of Safaricom's new transaction tiers.",
+          "How Kenyan fintechs are adapting to the new M-Pesa API pricing."
+        ],
+        script: {
+          v1: `[Hook] Safaricom just made a change that could kill your subscription startup overnight.
+[Context] They updated the M-Pesa API fee structures. Startups processing small micropayments under fifty shillings are seeing fees eat their entire margin.
+[Insight] If you charge twenty shillings and pay five shillings in fees, your business cannot survive. You need a different transaction architecture.
+[Takeaway] Switch to a wallet system. Let users deposit a thousand shillings once, and deduct credits. You save on M-Pesa fees and lock in users.
+[CTA] Are you affected by the new M-Pesa tiers? Share your thoughts below and let's find a workaround.`,
+          v2: `[Hook] The hidden Safaricom tax is getting expensive.
+[Context] Small SaaS products in Kenya are pivoting from instant M-Pesa triggers to ledger-based wallet models.
+[Insight] If you transaction-bundle, you turn 100 API triggers into 1. That is how you save your margin.
+[Takeaway] Don't build fintechs without studying Safaricom tariff shifts.
+[CTA] Tag a Kenyan developer who needs to read this.`
+        },
+        remix: {
+          format: "High M-Pesa transactional fees",
+          interpretation: "User deposit wallet system",
+          lesson: "Bundle transaction volume to protect profit margins"
+        }
+      }
+    ];
 
-    function log(message) {
-      logEl.textContent = `> ${message}\n${logEl.textContent}`;
-    }
+    // --- On-Chain Registry Log State ---
+    let registeredTrends = [];
 
-    function getInjectedProvider() {
-      return window.avalanche || window.ethereum || null;
-    }
+    // --- Initialize Page ---
+    document.addEventListener("DOMContentLoaded", () => {
+      // Load registered trends from local storage
+      const stored = localStorage.getItem("trendjack_registry");
+      if (stored) {
+        registeredTrends = JSON.parse(stored);
+      } else {
+        // Pre-populate with one past entry for high-fidelity look
+        registeredTrends = [
+          {
+            trendId: "mpesa-ledger-000",
+            title: "M-Pesa API transaction cost updates",
+            category: "Entrepreneurship",
+            score: 91,
+            hash: "0x8fa838df294fa4d173004b901a1d13f9c6d3de888879555cf498670df0a4cfc7",
+            timestamp: "2026-06-19 14:32:00",
+            status: "Success",
+            explorerUrl: "https://testnet.snowtrace.io/tx/0x8fa838df294fa4d173004b901a1d13f9c6d3de888879555cf498670df0a4cfc7"
+          }
+        ];
+        localStorage.setItem("trendjack_registry", JSON.stringify(registeredTrends));
+      }
 
-    function shortAddress(address) {
-      return `${address.slice(0, 6)}...${address.slice(-4)}`;
-    }
+      // Update total claims count in UI
+      updateRegistryUI();
 
-    function validateReadyState() {
-      const hasContract = /^0x[a-fA-F0-9]{40}$/.test(contractInput.value.trim());
-      contractState.textContent = hasContract ? shortAddress(contractInput.value.trim()) : "Set address to enable write";
-      anchorBtn.disabled = !(briefGenerated && signer && hasContract);
-    }
+      // Setup Greeting
+      setupGreeting();
 
-    generateBtn.addEventListener("click", () => {
-      briefGenerated = true;
-      trendHash = ethers.id(`${trendPayload.title}|${trendPayload.category}|${trendPayload.score}`);
-      generatedBrief.hidden = false;
-      generatedState.textContent = "AI brief generated and ready to register";
-      generateBtn.textContent = "Brief Generated";
-      generateBtn.disabled = true;
-      trendHashEl.textContent = `${trendHash.slice(0, 10)}...${trendHash.slice(-8)}`;
-      log(`AI generated a founder-ready brief. Trend hash: ${trendHash}`);
-      validateReadyState();
+      // Render feeds
+      renderDashboardFeed();
+      renderTrendingStrip();
+      renderLiveTrendsGrid();
+
+      // Set active trend to first element initially
+      setActiveTrendItem(mockTrends[0]);
+
+      // Handle query params or initial view settings
+      navigate('dashboard');
     });
 
-    connectBtn.addEventListener("click", async () => {
-      rawProvider = getInjectedProvider();
+    function setupGreeting() {
+      const greetingEl = document.getElementById("dashboardGreeting");
+      const hour = new Date().getHours();
+      let greetingText = "Good evening — here are your priority trends";
+      if (hour < 12) {
+        greetingText = "Good morning — here are your priority trends";
+      } else if (hour < 18) {
+        greetingText = "Good afternoon — here are your priority trends";
+      }
+      greetingEl.textContent = greetingText;
+    }
 
-      if (!rawProvider) {
-        log("No injected wallet found. Install Core Wallet and switch to Fuji.");
+    // --- Navigation System ---
+    function navigate(pageId) {
+      // Hide all pages
+      document.querySelectorAll(".tab-page").forEach(page => {
+        page.classList.remove("active");
+      });
+      // Deactivate all sidebar items
+      document.querySelectorAll(".nav-item").forEach(item => {
+        item.classList.remove("active");
+      });
+
+      // Show requested page
+      const pageNode = document.getElementById(`page-${pageId}`);
+      if (pageNode) {
+        pageNode.classList.add("active");
+      }
+      // Highlight sidebar
+      const navNode = document.getElementById(`nav-${pageId}`);
+      if (navNode) {
+        navNode.classList.add("active");
+      }
+
+      window.scrollTo(0, 0);
+    }
+
+    // --- Tab Rendering Engine ---
+    function renderDashboardFeed() {
+      const container = document.getElementById("priorityFeed");
+      container.innerHTML = "";
+
+      mockTrends.forEach(trend => {
+        const catClass = getCategoryBadgeClass(trend.category);
+        const card = document.createElement("div");
+        card.className = "trend-card-large";
+        
+        // Build platforms SVGs
+        let platformsHtml = "";
+        trend.platforms.forEach(p => {
+          platformsHtml += `<div class="platform-badge" title="${p.toUpperCase()}">${getPlatformSvg(p)}</div>`;
+        });
+
+        card.innerHTML = `
+          <div class="card-top">
+            <div class="card-meta">
+              <div class="meta-badges">
+                <span class="badge ${catClass}">${trend.category}</span>
+                <span class="badge" style="background:rgba(255,255,255,0.05); color:var(--text-muted)">Lifespan: ${trend.lifespan}</span>
+              </div>
+              <h4 class="trend-title-large">${trend.title}</h4>
+            </div>
+            <div class="score-container">
+              <div class="score-circle-wrapper">
+                <svg width="44" height="44" viewBox="0 0 44 44">
+                  <circle class="score-circle-bg" cx="22" cy="22" r="18"/>
+                  <circle class="score-circle-progress" cx="22" cy="22" r="18" 
+                    stroke-dasharray="113" stroke-dashoffset="${113 - (113 * trend.score) / 100}"/>
+                </svg>
+                <div class="score-number">${trend.score}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card-stats-row">
+            <div class="card-stat-item">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+              <span>Velocity: ${trend.velocity}</span>
+            </div>
+            <div class="card-stat-item">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>Seen: ${trend.firstSeen}</span>
+            </div>
+          </div>
+
+          <p style="color:var(--text-muted); font-size:0.88rem; line-height:1.45">${trend.shortSummary}</p>
+
+          <div class="card-actions">
+            <div class="platform-icons">
+              ${platformsHtml}
+            </div>
+            <div class="card-buttons">
+              <button class="btn btn-secondary" onclick="viewTrendDetail('${trend.trendId}')">View Details</button>
+              <button class="btn btn-primary" onclick="generateContentBrief('${trend.trendId}')">Generate Brief</button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderTrendingStrip() {
+      const container = document.getElementById("trendingStrip");
+      container.innerHTML = "";
+
+      mockTrends.forEach(trend => {
+        const card = document.createElement("div");
+        card.className = "trending-strip-card";
+        card.onclick = () => viewTrendDetail(trend.trendId);
+
+        card.innerHTML = `
+          <div class="strip-title">${trend.title}</div>
+          <div class="strip-footer">
+            <span style="font-size:0.75rem; color:var(--text-muted)">${trend.category}</span>
+            <span class="strip-score">Score ${trend.score}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderLiveTrendsGrid(filtered = mockTrends) {
+      const container = document.getElementById("trendsGrid");
+      container.innerHTML = "";
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted)">
+            No trends match selected filter criteria.
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(trend => {
+        const catClass = getCategoryBadgeClass(trend.category);
+        const isSaved = savedTrends.has(trend.trendId);
+        const card = document.createElement("div");
+        card.className = "trend-card-medium";
+
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px">
+            <span class="badge ${catClass}">${trend.category}</span>
+            <div style="display:flex; align-items:center; gap:8px">
+              <span style="font-size:0.75rem; font-weight:700; color:var(--success)">${trend.velocity}</span>
+              <button class="btn-icon-only" onclick="toggleSaveTrend(event, '${trend.trendId}')" style="width:24px; height:24px; border-radius:4px" title="Save Trend">
+                <svg viewBox="0 0 24 24" style="stroke:${isSaved ? 'var(--accent)' : 'currentColor'}; fill:${isSaved ? 'var(--accent)' : 'none'}"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              </button>
+            </div>
+          </div>
+          
+          <h4 style="font-family:'Outfit',sans-serif; font-size:1.1rem; font-weight:750; line-height:1.35; color:var(--text)" onclick="viewTrendDetail('${trend.trendId}')">${trend.title}</h4>
+          
+          <div class="trend-preview-box">
+            ${trend.previewHtml}
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:var(--text-muted)">
+            <span>Score: <strong>${trend.score}</strong></span>
+            <span>Lifespan: <strong>${trend.lifespan}</strong></span>
+          </div>
+
+          <div style="display:flex; gap:10px; border-top:1px solid var(--border); padding-top:12px">
+            <button class="btn btn-secondary" onclick="viewTrendDetail('${trend.trendId}')" style="flex:1; padding:8px 0">View</button>
+            <button class="btn btn-primary" onclick="generateContentBrief('${trend.trendId}')" style="flex:1; padding:8px 0">Generate Brief</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // --- Filters logic ---
+    function applyFilters() {
+      const catVal = document.getElementById("filterCategory").value;
+      const platVal = document.getElementById("filterPlatform").value;
+      const stageVal = document.getElementById("filterStage").value;
+
+      let filtered = mockTrends;
+
+      if (catVal !== "all") {
+        filtered = filtered.filter(t => t.category === catVal);
+      }
+      if (platVal !== "all") {
+        filtered = filtered.filter(t => t.platforms.includes(platVal));
+      }
+      if (stageVal !== "all") {
+        filtered = filtered.filter(t => t.stage === stageVal);
+      }
+
+      renderLiveTrendsGrid(filtered);
+    }
+
+    // --- Detail page setter ---
+    function viewTrendDetail(trendId) {
+      const trend = mockTrends.find(t => t.trendId === trendId);
+      if (!trend) return;
+
+      setActiveTrendItem(trend);
+      navigate('detail');
+    }
+
+    function setActiveTrendItem(trend) {
+      activeTrend = trend;
+      
+      // Update Detail UI text nodes
+      document.getElementById("detailCategoryPre").textContent = trend.category;
+      document.getElementById("detailTitle").textContent = trend.title;
+      document.getElementById("detailSummaryText").textContent = trend.shortSummary;
+      document.getElementById("detailHappeningText").textContent = trend.happeningText;
+      document.getElementById("detailFirstSeen").textContent = trend.firstSeen;
+      document.getElementById("detailStage").textContent = trend.stage;
+      document.getElementById("detailWhyTrending").textContent = trend.whyTrending;
+      document.getElementById("detailEmotionalTrigger").textContent = trend.emotionalTrigger;
+      document.getElementById("detailSocialTrigger").textContent = trend.socialTrigger;
+      document.getElementById("detailRelevanceNum").textContent = `${trend.relevance}%`;
+
+      // Detail Platforms Row
+      const platformRow = document.getElementById("detailPlatforms");
+      platformRow.innerHTML = "";
+      trend.platforms.forEach(p => {
+        platformRow.innerHTML += `<div class="platform-badge" title="${p.toUpperCase()}">${getPlatformSvg(p)}</div>`;
+      });
+
+      // Carousel Render
+      activeCarouselIndex = 0;
+      renderCarousel();
+
+      // Reset Content Brief Screen to match active trend
+      renderContentBriefScreen();
+
+      // Update Dev Console contract trigger buttons status
+      validateRegisterButtonState();
+    }
+
+    function renderCarousel() {
+      const slidesContainer = document.getElementById("carouselSlides");
+      const dotsContainer = document.getElementById("carouselDots");
+
+      slidesContainer.innerHTML = "";
+      dotsContainer.innerHTML = "";
+
+      activeTrend.carouselSlides.forEach((slide, idx) => {
+        // Slide Card
+        const slideDiv = document.createElement("div");
+        slideDiv.className = `carousel-slide ${idx === activeCarouselIndex ? 'active' : ''}`;
+        slideDiv.innerHTML = `
+          <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between">
+            <span>Evidence Type: ${slide.type}</span>
+            <span>Slide ${idx+1}/${activeTrend.carouselSlides.length}</span>
+          </div>
+          <div class="trend-preview-box" style="min-height:200px">
+            ${slide.content}
+          </div>
+          <div style="font-size:0.8rem; color:var(--text); font-weight:700; margin-top:8px">${slide.title}</div>
+        `;
+        slidesContainer.appendChild(slideDiv);
+
+        // Dot
+        const dot = document.createElement("span");
+        dot.className = `carousel-dot ${idx === activeCarouselIndex ? 'active' : ''}`;
+        dot.onclick = () => {
+          activeCarouselIndex = idx;
+          renderCarousel();
+        };
+        dotsContainer.appendChild(dot);
+      });
+    }
+
+    function nextCarouselSlide() {
+      if (!activeTrend) return;
+      activeCarouselIndex = (activeCarouselIndex + 1) % activeTrend.carouselSlides.length;
+      renderCarousel();
+    }
+
+    function prevCarouselSlide() {
+      if (!activeTrend) return;
+      activeCarouselIndex = (activeCarouselIndex - 1 + activeTrend.carouselSlides.length) % activeTrend.carouselSlides.length;
+      renderCarousel();
+    }
+
+    // --- Content Brief Page Generator ---
+    function generateContentBrief(trendId) {
+      const trend = mockTrends.find(t => t.trendId === trendId);
+      if (!trend) return;
+      
+      setActiveTrendItem(trend);
+      renderContentBriefScreen();
+      navigate('contentbriefs');
+      showToast("Brief Generated", `AI brief for "${trend.title}" loaded successfully.`, "success");
+    }
+
+    function renderContentBriefScreen() {
+      if (!activeTrend) return;
+
+      currentScriptVariation = 1;
+
+      document.getElementById("briefCategoryBadge").className = `badge ${getCategoryBadgeClass(activeTrend.category)}`;
+      document.getElementById("briefCategoryBadge").textContent = activeTrend.category;
+      document.getElementById("briefHappeningText").textContent = activeTrend.shortSummary;
+      document.getElementById("briefWhySpreading").textContent = activeTrend.whyTrending;
+      document.getElementById("briefLifespanText").textContent = activeTrend.lifespan;
+      document.getElementById("briefKuzanaText").textContent = activeTrend.kuzanaAngle;
+
+      // Hooks
+      const hooksList = document.getElementById("briefHooksList");
+      hooksList.innerHTML = "";
+      activeTrend.hooks.forEach((hook, index) => {
+        const item = document.createElement("div");
+        item.className = "hook-item-card";
+        item.innerHTML = `
+          <div style="display:flex; align-items:center; gap:12px">
+            <span style="width:22px; height:22px; border-radius:50%; background:rgba(232, 65, 66, 0.1); color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700">${index+1}</span>
+            <span class="hook-text">${hook}</span>
+          </div>
+          <button class="btn btn-secondary" style="padding:6px 12px; font-size:0.75rem" onclick="copyHook(this, '${hook.replace(/'/g, "\\'")}')">
+            Copy
+          </button>
+        `;
+        hooksList.appendChild(item);
+      });
+
+      // Script
+      renderScriptContent(activeTrend.script.v1);
+
+      // Remix Template Flow
+      const remixFlow = document.getElementById("briefRemixFlow");
+      remixFlow.innerHTML = `
+        <div class="remix-step">
+          <div class="remix-step-title">Trend Format</div>
+          <div class="remix-step-value">${activeTrend.remix.format}</div>
+        </div>
+        <div class="remix-arrow">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+        </div>
+        <div class="remix-step">
+          <div class="remix-step-title">Business Interpretation</div>
+          <div class="remix-step-value">${activeTrend.remix.interpretation}</div>
+        </div>
+        <div class="remix-arrow">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+        </div>
+        <div class="remix-step">
+          <div class="remix-step-title">Founder Lesson</div>
+          <div class="remix-step-value">${activeTrend.remix.lesson}</div>
+        </div>
+      `;
+    }
+
+    function renderScriptContent(scriptText) {
+      const scriptBody = document.getElementById("briefScriptBody");
+      scriptBody.innerHTML = "";
+
+      const segments = scriptText.split("\n");
+      segments.forEach(seg => {
+        if (!seg.trim()) return;
+        const match = seg.match(/^\[(.*?)\](.*)$/);
+        if (match) {
+          const label = match[1];
+          const text = match[2];
+          scriptBody.innerHTML += `
+            <div class="script-segment">
+              <span class="script-segment-label">${label}</span>
+              <span class="script-segment-content">${text.trim()}</span>
+            </div>
+          `;
+        } else {
+          scriptBody.innerHTML += `<div style="margin-bottom:8px">${seg}</div>`;
+        }
+      });
+    }
+
+    function copyHook(btn, hookText) {
+      navigator.clipboard.writeText(hookText).then(() => {
+        btn.textContent = "Copied!";
+        btn.style.color = "var(--success)";
+        btn.style.borderColor = "var(--success)";
+        setTimeout(() => {
+          btn.textContent = "Copy";
+          btn.style.color = "";
+          btn.style.borderColor = "";
+        }, 1500);
+        showToast("Hook Copied", "Hook copied to clipboard.", "success");
+      });
+    }
+
+    function copyEntireScript() {
+      if (!activeTrend) return;
+      const rawText = currentScriptVariation === 1 ? activeTrend.script.v1 : activeTrend.script.v2;
+      // Strip bracket labels for clean paste
+      const cleanText = rawText.replace(/\[.*?\]/g, "").trim();
+
+      navigator.clipboard.writeText(cleanText).then(() => {
+        showToast("Script Copied", "Shoot-ready script copied without scene tags.", "success");
+      });
+    }
+
+    function regenerateScript() {
+      const regenSpinner = document.getElementById("regenSpinner");
+      const regenIcon = document.getElementById("regenIcon");
+      const regenText = document.getElementById("regenText");
+
+      regenSpinner.style.display = "inline-block";
+      regenIcon.style.display = "none";
+      regenText.textContent = "Regenerating...";
+
+      setTimeout(() => {
+        regenSpinner.style.display = "none";
+        regenIcon.style.display = "inline-block";
+        regenText.textContent = "Regenerate";
+
+        if (currentScriptVariation === 1) {
+          currentScriptVariation = 2;
+          renderScriptContent(activeTrend.script.v2);
+        } else {
+          currentScriptVariation = 1;
+          renderScriptContent(activeTrend.script.v1);
+        }
+
+        showToast("Script Regenerated", "AI generated a new script angle.", "info");
+      }, 1200);
+    }
+
+    function triggerGenerateBriefFromDetail() {
+      if (!activeTrend) return;
+      generateContentBrief(activeTrend.trendId);
+    }
+
+    // --- Save trends discover toggles ---
+    function toggleSaveTrend(event, trendId) {
+      event.stopPropagation();
+      if (savedTrends.has(trendId)) {
+        savedTrends.delete(trendId);
+        showToast("Trend Unsaved", "Trend removed from your saved list.", "info");
+      } else {
+        savedTrends.add(trendId);
+        showToast("Trend Saved", "Trend bookmarked for content briefs.", "success");
+      }
+      applyFilters();
+    }
+
+    // --- Helper UI renderers ---
+    function getCategoryBadgeClass(category) {
+      switch(category) {
+        case "Founder Culture": return "badge-founder";
+        case "Business": return "badge-business";
+        case "Money": return "badge-money";
+        case "Entrepreneurship": return "badge-entrepreneurship";
+        default: return "";
+      }
+    }
+
+    function getPlatformSvg(platform) {
+      switch(platform) {
+        case "x":
+          return `<svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`;
+        case "reddit":
+          return `<svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 5.523 4.477 10 10 10s10-4.477 10-10c0-5.523-4.477-10-10-10zm4.5 13.5a1.5 1.5 0 0 1-2.515 1.077 8.847 8.847 0 0 1-3.985.423c-1.5-.15-2.8-.8-3.667-1.785a1.5 1.5 0 1 1-1.018-2.615c.1 0 .2.02.3.06a5.55 5.55 0 0 1 2.37-3.2 4.46 4.46 0 0 1-.3-1.46c0-1.1.9-2 2-2a2 2 0 0 1 1.9 1.4c1.2-.1 2.5 0 3.7.3a1.5 1.5 0 1 1 2.22 1.63c.6.6 1 1.3 1.2 2.1a1.5 1.5 0 1 1 1.075 2.6z"/></svg>`;
+        case "tiktok":
+          return `<svg viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.07-2.89-.52-4.06-1.42-.42-.31-.8-.67-1.14-1.07-.03 2.66-.01 5.32-.02 7.98-.06 2.39-.99 4.82-2.89 6.27-2.18 1.72-5.39 2.05-7.88 1.02-2.69-1.07-4.57-3.95-4.57-6.95.02-3.18 2.21-6.19 5.37-6.72.77-.14 1.56-.16 2.34-.07.02 1.3.01 2.6.02 3.91-.71-.16-1.48-.05-2.11.31-1.12.6-1.76 1.88-1.66 3.17.06 1.16.8 2.27 1.89 2.66 1.29.49 2.92.17 3.86-.84.77-.79.93-1.99.91-3.05v-12.2H12.52v.01z"/></svg>`;
+        case "news":
+          return `<svg viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:2"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1M19 20a2 2 0 002-2V8a2 2 0 00-2-2h-2M19 20H9a2 2 0 01-2-2v-5M11 8h2m-2 4h2M11 16h2"/></svg>`;
+        case "youtube":
+          return `<svg viewBox="0 0 24 24"><path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.518 3.545 12 3.545 12 3.545s-7.518 0-9.388.508a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.87.508 9.388.508 9.388.508s7.518 0 9.388-.508a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`;
+        default:
+          return "";
+      }
+    }
+
+    // --- Web3 / Avalanche Fuji logic ---
+    function log(message, type = "success") {
+      const logsEl = document.getElementById("consoleLogs");
+      let prefix = "[SYSTEM]";
+      if (type === "error") prefix = "[ERROR]❌";
+      if (type === "pending") prefix = "[PENDING]⏳";
+
+      logsEl.innerHTML = `${prefix} ${message}<br/>${logsEl.innerHTML}`;
+    }
+
+    function clearLogs() {
+      document.getElementById("consoleLogs").innerHTML = "[SYSTEM] Logs cleared.";
+    }
+
+    function toggleMockMode() {
+      isMockMode = document.getElementById("mockWeb3Toggle").checked;
+      log(`Switched to ${isMockMode ? 'Demo Wallet Mode' : 'Connected Live Wallet Mode'}.`);
+      
+      // Reset wallet state
+      walletConnected = false;
+      signer = null;
+      updateWalletUI();
+      validateRegisterButtonState();
+    }
+
+    function updateWalletUI() {
+      const dot = document.getElementById("walletDot");
+      const statusText = document.getElementById("walletStatusText");
+      const addressText = document.getElementById("walletAddressText");
+      const connectBtn = document.getElementById("connectWalletBtn");
+
+      if (walletConnected) {
+        dot.className = "wallet-status-dot connected";
+        statusText.textContent = isMockMode ? "Core Wallet (Demo)" : "Connected";
+        addressText.textContent = isMockMode ? "0x34aD...3F92" : shortenAddress(signer.address);
+        connectBtn.innerHTML = `<span>Disconnect</span>`;
+        connectBtn.style.background = "linear-gradient(135deg, #10b981 0%, #047857 100%)";
+      } else {
+        dot.className = "wallet-status-dot";
+        statusText.textContent = "Disconnected";
+        addressText.textContent = "—";
+        connectBtn.innerHTML = `
+          <svg style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><path d="M20 12V8H6a2 2 0 013.5-1.5M20 12v4H6a2 2 0 003.5 1.5M20 12H8m12 0H4a2 2 0 01-2-2V6a2 2 0 012-2h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2v-4a2 2 0 012-2h16"/></svg>
+          <span>Connect Core</span>
+        `;
+        connectBtn.style.background = "";
+      }
+    }
+
+    function shortenAddress(addr) {
+      if (!addr) return "—";
+      return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    }
+
+    async function connectWallet() {
+      if (walletConnected) {
+        // Disconnect
+        walletConnected = false;
+        signer = null;
+        rawProvider = null;
+        updateWalletUI();
+        validateRegisterButtonState();
+        log("Wallet disconnected.");
+        return;
+      }
+
+      if (isMockMode) {
+        // Simulated wallet connection
+        walletConnected = true;
+        signer = { address: "0x34aDbF9527D6cE8047F46B18D3b5840A6B9B3F92" };
+        updateWalletUI();
+        validateRegisterButtonState();
+        log("Connected to Core Wallet (Demo Mode) on Fuji Testnet (Chain ID 43113).");
+        showToast("Wallet Connected", "Successfully simulated Core Wallet connection.", "success");
+        return;
+      }
+
+      // Real provider logic
+      const injected = window.avalanche || window.ethereum;
+      if (!injected) {
+        log("No injected Web3 Wallet detected. Please install Core Wallet browser extension.", "error");
+        showToast("Connection Error", "Core Wallet extension not found.", "info");
         return;
       }
 
       try {
-        await rawProvider.request({ method: "eth_requestAccounts" });
-        const chainId = Number.parseInt(await rawProvider.request({ method: "eth_chainId" }), 16);
+        log("Requesting account connection...", "pending");
+        await injected.request({ method: "eth_requestAccounts" });
+        const chainId = Number.parseInt(await injected.request({ method: "eth_chainId" }), 16);
 
         if (chainId !== FUJI_CHAIN_ID) {
-          log("Wrong network. Switch Core Wallet to Avalanche Fuji Testnet, chain ID 43113.");
+          log(`Wrong network (Chain ID: ${chainId}). Switch your Core Wallet to Avalanche Fuji Testnet (43113).`, "error");
+          showToast("Network Error", "Switch to Fuji Testnet (43113)", "info");
           return;
         }
 
-        const provider = new ethers.BrowserProvider(rawProvider);
-        signer = await provider.getSigner();
-        const address = await signer.getAddress();
+        rawProvider = new ethers.BrowserProvider(injected);
+        signer = await rawProvider.getSigner();
+        walletConnected = true;
 
-        walletStatus.classList.add("connected");
-        walletStatus.querySelector("span:last-child").textContent = `Connected ${shortAddress(address)}`;
-        connectBtn.textContent = "Connected";
-        connectBtn.disabled = true;
-        log(`Core Wallet connected: ${shortAddress(address)}`);
-        validateReadyState();
-      } catch (error) {
-        log(`Connection failed: ${error.message}`);
+        updateWalletUI();
+        validateRegisterButtonState();
+        log(`Connected successfully: ${signer.address}`);
+        showToast("Connected", `Core Wallet connected on Fuji!`, "success");
+      } catch (err) {
+        log(`Connection failed: ${err.message}`, "error");
       }
-    });
+    }
 
-    contractInput.addEventListener("input", validateReadyState);
+    function validateRegisterButtonState() {
+      const contractInput = document.getElementById("registryContractAddress").value.trim();
+      const hasContract = /^0x[a-fA-F0-9]{40}$/.test(contractInput);
+      const isReady = walletConnected && hasContract && activeTrend;
 
-    anchorBtn.addEventListener("click", async () => {
-      try {
-        const registry = new ethers.Contract(contractInput.value.trim(), registryAbi, signer);
-        const tx = await registry.registerTrend(
-          trendPayload.trendId,
-          trendHash,
-          trendPayload.title,
-          trendPayload.category,
-          trendPayload.score,
-          trendPayload.briefHash
-        );
-        log(`Transaction submitted: ${tx.hash}`);
-        await tx.wait();
-        log(`Registered on Fuji: https://testnet.snowtrace.io/tx/${tx.hash}`);
-      } catch (error) {
-        log(`Registration failed: ${error.reason || error.message}`);
+      document.getElementById("btnRegisterActive").disabled = !isReady;
+    }
+
+    function verifyContractConnection() {
+      const contractInput = document.getElementById("registryContractAddress").value.trim();
+      const hasContract = /^0x[a-fA-F0-9]{40}$/.test(contractInput);
+
+      if (hasContract) {
+        log(`Contract address validated: ${contractInput}`);
+        showToast("Verified", "Contract address format is correct.", "success");
+      } else {
+        log(`Invalid contract address: ${contractInput}`, "error");
+        showToast("Error", "Please input a valid 40-character Ethereum/AVAX address.", "info");
       }
-    });
+      validateRegisterButtonState();
+    }
+
+    // --- On-Chain Registry Log Actions ---
+    async function registerActiveTrendOnChain() {
+      if (!activeTrend) return;
+      if (!walletConnected) {
+        showToast("Wallet Error", "Please connect your wallet first.", "info");
+        return;
+      }
+
+      const contractAddress = document.getElementById("registryContractAddress").value.trim();
+      if (!/^0x[a-fA-F0-9]{40}$/.test(contractAddress)) {
+        showToast("Address Error", "Please input a valid contract address.", "info");
+        return;
+      }
+
+      // Generate trend details hashes
+      const trendHash = ethers.id(`${activeTrend.title}|${activeTrend.category}|${activeTrend.score}`);
+      const briefHash = `ipfs://bafy-${activeTrend.trendId}-shoot-brief`;
+
+      log(`Initiating registry for "${activeTrend.title}"...`, "pending");
+      
+      if (isMockMode) {
+        // Mock registry workflow
+        log(`[Simulating] Invoking registerTrend on contract ${contractAddress.slice(0, 8)}...`, "pending");
+        
+        setTimeout(() => {
+          const fakeTxHash = "0x" + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join("");
+          const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+          
+          const newReg = {
+            trendId: activeTrend.trendId,
+            title: activeTrend.title,
+            category: activeTrend.category,
+            score: activeTrend.score,
+            hash: fakeTxHash,
+            timestamp: timestamp,
+            status: "Success",
+            explorerUrl: `https://testnet.snowtrace.io/tx/${fakeTxHash}`
+          };
+
+          registeredTrends.unshift(newReg);
+          localStorage.setItem("trendjack_registry", JSON.stringify(registeredTrends));
+
+          updateRegistryUI();
+          log(`Registered successfully on Fuji C-Chain!`, "success");
+          log(`Transaction hash: ${fakeTxHash}`);
+          log(`Explorer URL: https://testnet.snowtrace.io/tx/${fakeTxHash}`);
+          
+          showToast("Trend Registered", "Trend saved successfully in the Fuji Testnet registry.", "success");
+        }, 1500);
+      } else {
+        // Real Registry Transaction
+        try {
+          const registryContract = new ethers.Contract(contractAddress, contractAbi, signer);
+          
+          log(`Submitting on-chain transaction to contract ${contractAddress}...`, "pending");
+          const tx = await registryContract.registerTrend(
+            activeTrend.trendId,
+            trendHash,
+            activeTrend.title,
+            activeTrend.category,
+            activeTrend.score,
+            briefHash
+          );
+          
+          log(`Transaction submitted! Hash: ${tx.hash}`, "pending");
+          showToast("Submitted", "Transaction submitted to blockchain. Waiting for block confirmation.", "info");
+          
+          await tx.wait();
+          
+          const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+          const newReg = {
+            trendId: activeTrend.trendId,
+            title: activeTrend.title,
+            category: activeTrend.category,
+            score: activeTrend.score,
+            hash: tx.hash,
+            timestamp: timestamp,
+            status: "Success",
+            explorerUrl: `https://testnet.snowtrace.io/tx/${tx.hash}`
+          };
+
+          registeredTrends.unshift(newReg);
+          localStorage.setItem("trendjack_registry", JSON.stringify(registeredTrends));
+
+          updateRegistryUI();
+          log(`Registered on Fuji Testnet!`, "success");
+          log(`Tx Explorer: https://testnet.snowtrace.io/tx/${tx.hash}`);
+          
+          showToast("Success!", "Registered on Avalanche blockchain.", "success");
+        } catch (err) {
+          log(`Registration transaction failed: ${err.message}`, "error");
+          showToast("Transaction Failed", err.reason || err.message, "info");
+        }
+      }
+    }
+
+    function triggerRegisterFromDetail() {
+      if (!activeTrend) return;
+      // Switch to registry tab, select the active trend and register
+      navigate('registry');
+      setTimeout(() => {
+        registerActiveTrendOnChain();
+      }, 300);
+    }
+
+    function updateRegistryUI() {
+      const tableBody = document.getElementById("registryTableBody");
+      tableBody.innerHTML = "";
+
+      if (registeredTrends.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted)">No trends registered on-chain yet.</td></tr>`;
+        return;
+      }
+
+      registeredTrends.forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><strong>${item.trendId}</strong></td>
+          <td>${item.title}</td>
+          <td><span class="badge ${getCategoryBadgeClass(item.category)}">${item.category}</span></td>
+          <td>${item.score}/100</td>
+          <td class="registry-hash" title="${item.hash}">${item.hash.slice(0, 8)}...${item.hash.slice(-6)}</td>
+          <td><span style="color:var(--success); font-weight:700">● ${item.status}</span></td>
+          <td class="registry-actions-col">
+            <a class="btn btn-secondary" style="padding:4px 8px; font-size:0.75rem" href="${item.explorerUrl}" target="_blank">Explorer</a>
+            <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.75rem" onclick="copyTextHash('${item.hash}')">Copy Hash</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+
+      // Update claims counts
+      document.getElementById("registryTotalClaims").textContent = registeredTrends.length;
+      document.getElementById("settingsReputation").textContent = `${registeredTrends.length * 3} points`;
+    }
+
+    function copyTextHash(hash) {
+      navigator.clipboard.writeText(hash).then(() => {
+        showToast("Hash Copied", "Transaction hash copied to clipboard.", "success");
+      });
+    }
+
+    function resetAppDatabase() {
+      if (confirm("Are you sure you want to reset the registry database? This will clear all transactions.")) {
+        localStorage.removeItem("trendjack_registry");
+        registeredTrends = [];
+        updateRegistryUI();
+        showToast("Database Reset", "Local mock registry has been cleared.", "info");
+      }
+    }
+
+    // --- Global AI Assistant Logic ---
+    function toggleChatWindow() {
+      const win = document.getElementById("aiChatWindow");
+      win.style.display = win.style.display === "flex" ? "none" : "flex";
+      
+      // Auto scroll to bottom
+      const msgs = document.getElementById("chatMessages");
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function sendChatMessage() {
+      const input = document.getElementById("chatInput");
+      const query = input.value.trim();
+      if (!query) return;
+
+      appendChatMessage(query, "user");
+      input.value = "";
+
+      // Process query responses
+      logAssistantTypingResponse(query);
+    }
+
+    function triggerPreset(presetText) {
+      appendChatMessage(presetText, "user");
+      logAssistantTypingResponse(presetText);
+    }
+
+    function appendChatMessage(text, sender) {
+      const msgs = document.getElementById("chatMessages");
+      const div = document.createElement("div");
+      div.className = `chat-msg ${sender}`;
+      div.textContent = text;
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function logAssistantTypingResponse(query) {
+      const msgs = document.getElementById("chatMessages");
+      
+      // Add loading slide
+      const loadingDiv = document.createElement("div");
+      loadingDiv.className = "chat-msg assistant";
+      loadingDiv.innerHTML = `<span class="spinner-loader" style="width:10px; height:10px"></span> AI is analyzing...`;
+      msgs.appendChild(loadingDiv);
+      msgs.scrollTop = msgs.scrollHeight;
+
+      // Select matching simulated responses based on active trend
+      let response = "I'm analyzing your request. Let me customize the content for your audience...";
+
+      const trend = activeTrend || mockTrends[0];
+
+      if (query.includes("Why is this trending?")) {
+        response = `"${trend.title}" is trending because of ${trend.whyTrending} This is triggering high engagement triggers on ${trend.platforms.join(", ").toUpperCase()}.`;
+      } else if (query.includes("Generate better hook")) {
+        response = `Here is an alternative high-conversion hook for "${trend.title}":\n\n"Nairobi startup founders are losing thousands in profits because they ignore this basic shift. Let me explain..."`;
+      } else if (query.includes("Shorten script")) {
+        response = `Here is a shortened 20-second version of the script:\n\n"Stop wasting money on heavy Shopify systems. Nairobi shop owners are using WhatsApp + Till numbers to automate 100% of their sales. Drop a comment for our setup guide!"`;
+      } else if (query.includes("Make it more Kenyan relevant")) {
+        if (trend.trendId === "x-ai-interns-ke-001") {
+          response = `Kuzana Slang Remix 🇰🇪:\n\n"Wasee, early-stage founders wanamada manual work na AI agents za 20 bob! Kama wewe ni intern na unashinda tu ukicopy-paste ma-spreadsheets Kilimani, AI inakuja kukura! Amka na uanze kujua prompting ndio startup ikuandike kufanya real sales calls. Usikubali kuachwa nyuma."`;
+        } else if (trend.trendId === "sme-whatsapp-ke-002") {
+          response = `Kuzana Slang Remix 🇰🇪:\n\n"Kwanini ulipe designer 50k ya website na wasee wanatafuta bidhaa zako WhatsApp pekee? Kamukunji CBD sellers wameeka catalogs zao WhatsApp, waka-link na Till. Unalipa bob mbili kwa data na biashara inafanyika ukiwa umelala. Acha kucheza!"`;
+        } else if (trend.trendId === "founder-salaries-ke-003") {
+          response = `Kuzana Slang Remix 🇰🇪:\n\n"Unadhani ma-tech founders wanateseka na ma-Prado Nairobi? Boss, wengi wanalipa rent Kilimani na salary ya 70k bob! Hii biashara sio ya shoo. Extenda runway yako, lipa intern vizuri na utajenga biashara ya ukweli. Wacha kufake lifestyle."`;
+        } else {
+          response = `Kuzana Slang Remix 🇰🇪:\n\n"Safaricom wameongeza pricing ya M-Pesa API yetu. Kama ulikua unachaji 20 bob micropayments, margins zako zimeisha! Pivot haraka uunde wallet model ambapo wasee wanadeposit mara moja. Usipigane na Safaricom, jipange karibu nao."`;
+        }
+      } else if (query.includes("Turn script into Twitter thread")) {
+        response = `Here is your X/Twitter Thread format 🧵:\n\n1/ Nairobi startup founders are shifting priorities away from e-commerce websites. Here's why WhatsApp Catalog is winning in 2026. 👇\n\n2/ Data packages are expensive. The average customer won't wait 6 seconds for a heavy website to load. Moving your storefront straight to WhatsApp chat increases retention by 70%.\n\n3/ Automate payment triggers by linking WhatsApp catalogs directly to M-Pesa Till numbers. Click, Chat, Pay, Confirm.`;
+      } else {
+        // Generic response
+        response = `Interesting query about "${trend.title}". In Nairobi's tech scene, we recommend optimizing your funnel by using clean, mobile-first pages, leveraging M-Pesa's speed, and speaking directly to founder pain points. Let me know if you'd like a custom script segment for that!`;
+      }
+
+      setTimeout(() => {
+        // Remove loading
+        msgs.removeChild(loadingDiv);
+
+        // Append real response with a simulated typing/streaming effect
+        const resDiv = document.createElement("div");
+        resDiv.className = "chat-msg assistant";
+        msgs.appendChild(resDiv);
+
+        let i = 0;
+        function typeWriter() {
+          if (i < response.length) {
+            resDiv.innerHTML += response.charAt(i);
+            i++;
+            msgs.scrollTop = msgs.scrollHeight;
+            setTimeout(typeWriter, 10);
+          }
+        }
+        typeWriter();
+      }, 1000);
+    }
+
+    // --- Dynamic Toast notifications ---
+    function showToast(title, body, type = "success") {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <div style="display:flex; flex-direction:column">
+          <span style="font-size:0.85rem; font-weight:700">${title}</span>
+          <span style="font-size:0.75rem; color:var(--text-muted); margin-top:2px">${body}</span>
+        </div>
+      `;
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.animation = "fadeOut 0.3s forwards";
+        setTimeout(() => {
+          container.removeChild(toast);
+        }, 300);
+      }, 3500);
+    }
   </script>
 </body>
 </html>

@@ -23,6 +23,52 @@ Kenyan creator teams often miss viral windows because they find trends too late,
 3. **Avalanche Trend Registry**
    Registers verified trend events on Avalanche Fuji with a trend hash, timestamp, category, score snapshot, brief hash, and contributor.
 
+## Backend Architecture
+
+The backend converts raw social signals into ranked trends, structured content briefs, and optional on-chain records.
+
+```text
+Scrapers / APIs
+  X | Reddit | Kenyan News | TikTok | YouTube
+        |
+Ingestion Layer
+  normalization, deduplication, event queue
+        |
+Trend Engine
+  clustering, velocity scoring, lifecycle stage
+        |
+AI Layer
+  classification, local context, hook, script, remix template
+        |
+FastAPI
+  trends, briefs, registry endpoints
+        |
+Avalanche C-Chain Service
+  trend hash registration and verification
+```
+
+Implemented MVP modules:
+
+- `backend/app/ingestion/` collects normalized demo signals for X, Reddit, and Kenyan news.
+- `backend/app/trend_engine/` clusters signals and scores trends with velocity, cross-platform presence, and acceleration.
+- `backend/app/classifier/` classifies Founder Culture, Business, Money, or Not Relevant with deterministic MVP logic.
+- `backend/app/ai_brief_generator/` generates founder-focused ready-to-shoot briefs.
+- `backend/app/api` is represented by `backend/app/main.py`, the FastAPI entrypoint.
+- `backend/app/blockchain/` hashes trends and submits to Avalanche Fuji when registry credentials are configured.
+- `backend/app/cache_layer/` provides a local TTL cache for hot trend leaderboards.
+
+The production design still supports PostgreSQL, Redis, OpenAI or Claude, Celery/RQ, Playwright, Reddit API, X API, and RSS ingestion. The current 7-day MVP keeps those seams explicit while using deterministic local data so the demo works immediately.
+
+## API Endpoints
+
+- `GET /health`
+- `POST /ingest/demo`
+- `GET /trends`
+- `GET /trends/{trend_id}`
+- `POST /generate-brief` with `{ "trend_id": "ai-interns" }`
+- `POST /register-trend` with `{ "trend_id": "ai-interns" }`
+- `GET /registry`
+
 ## Avalanche Integration
 
 Avalanche C-Chain is the verifiable Trend Registry layer. The smart contract records:
@@ -66,6 +112,12 @@ Install dependencies:
 npm install
 ```
 
+Install backend dependencies:
+
+```bash
+python -m pip install -r requirements-backend.txt
+```
+
 Compile:
 
 ```bash
@@ -84,6 +136,18 @@ Open the frontend:
 xdg-open frontend/index.html
 ```
 
+Run the backend:
+
+```bash
+npm run backend
+```
+
+Then open:
+
+```bash
+http://localhost:8000/docs
+```
+
 ## Deploy To Fuji
 
 Create `.env` from `.env.example` and add a funded Fuji private key:
@@ -99,3 +163,5 @@ npm run deploy:fuji
 ```
 
 Paste the deployed contract address into the frontend, connect Core Wallet on Fuji, generate the brief, then register the trend on Avalanche.
+
+For backend-side registration, set `TREND_REGISTRY_ADDRESS` and `REGISTRY_PRIVATE_KEY` in `.env`. Without those values, `/register-trend` returns a dry-run registry payload with the computed trend hash instead of submitting a transaction.

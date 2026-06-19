@@ -1,0 +1,1 @@
+"""Trend Hunter backend package."""
