@@ -101,7 +101,10 @@ Success means a user can move from trend discovery to publishable script to on-c
 
 - `contracts/YourContract.sol` contains the `TrendRegistry` Solidity contract.
 - `test/YourContract.test.js` covers registration, duplicate prevention, score updates, brief attachment, verification, trend hashes, and contributor reputation.
-- `frontend/index.html` is the mobile-first static demo dashboard.
+- `frontend/index.html` contains the mobile-first dashboard markup.
+- `frontend/styles.css` contains dashboard styling.
+- `frontend/js/` contains split frontend logic:
+  `state.js`, `mock-data.js`, `api.js`, `trends.js`, `wallet.js`, `registry.js`, `assistant.js`, `toast.js`, and `init.js`.
 - `scripts/deploy.js` deploys `TrendRegistry`.
 
 ## Run Locally
