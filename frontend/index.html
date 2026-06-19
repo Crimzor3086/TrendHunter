@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Trendjack Hunter — AI Trend-to-Script Engine</title>
+  <title>Trend Hunter — AI Trend-to-Script Engine</title>
   <!-- Google Fonts: Inter & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2002,6 +2002,10 @@
           <div class="page-title-pre">Real-time signal feed</div>
           <h2 class="page-title">Live Trend Discovery</h2>
           <p class="page-description">Filter and explore rising digital anomalies across multiple platforms with high relevance scoring.</p>
+          <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="loadBackendTrends({ refreshLive: true })">Refresh Live Sources</button>
+            <button class="btn btn-secondary" onclick="loadBackendTrends()">Sync Backend Cache</button>
+          </div>
         </div>
 
         <!-- Filters -->
@@ -2261,7 +2265,7 @@
             <div class="form-group">
               <label class="form-label" for="registryContractAddress">Deployed TrendRegistry Address</label>
               <div class="form-input-container">
-                <input class="form-input" id="registryContractAddress" type="text" value="0xE2D5bD9856A9e315024476B0B68C1C89F3f389D6" placeholder="0x..." />
+                <input class="form-input" id="registryContractAddress" type="text" value="" placeholder="0x..." />
                 <button class="btn btn-secondary" onclick="verifyContractConnection()" style="padding:0 16px">Verify</button>
               </div>
               <span style="font-size:0.75rem; color:var(--text-muted)">
@@ -2274,7 +2278,10 @@
                 <span style="font-size:1.15rem; font-family:'Outfit',sans-serif; font-weight:800; color:var(--success)" id="registryTotalClaims">0</span>
               </div>
               <button class="btn btn-primary" id="btnRegisterActive" onclick="registerActiveTrendOnChain()" disabled>
-                Register Active Trend
+                Register with Wallet
+              </button>
+              <button class="btn btn-secondary" onclick="registerActiveTrendViaBackend()" style="padding:10px 14px">
+                Register via Backend
               </button>
             </div>
           </div>
@@ -2445,6 +2452,8 @@ function registerTrend(string trendId, bytes32 trendHash, string title, string c
     let activeCarouselIndex = 0;
     let savedTrends = new Set();
     let currentScriptVariation = 1; // 1 or 2
+    let liveTrends = [];
+    const API_BASE = localStorage.getItem("trend_hunter_api_base") || "http://localhost:8000";
 
     // --- Mock Database ---
     const mockTrends = [
@@ -2833,11 +2842,126 @@ function registerTrend(string trendId, bytes32 trendHash, string title, string c
       }
     ];
 
+    function getTrendDataset() {
+      return liveTrends.length ? liveTrends : mockTrends;
+    }
+
+    function timeAgo(timestamp) {
+      if (!timestamp) return "recently";
+      const then = new Date(timestamp).getTime();
+      const diffMs = Date.now() - then;
+      const hours = Math.max(1, Math.round(diffMs / 3600000));
+      if (hours < 24) return `${hours} hours ago`;
+      return `${Math.round(hours / 24)} days ago`;
+    }
+
+    function estimateLifespan(stage) {
+      const normalized = String(stage || "").toLowerCase();
+      if (normalized === "emerging") return "24-72 hours";
+      if (normalized === "growing") return "3-5 days";
+      if (normalized === "peak") return "1-2 days";
+      return "<24 hours";
+    }
+
+    function titleCaseStage(stage) {
+      const value = String(stage || "emerging").toLowerCase();
+      return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    function signalPreviewHtml(trend) {
+      const signal = trend.raw_signals?.[0];
+      if (!signal) return `<div class="mock-news"><span class="news-tag">Live</span><h4 class="news-title">${trend.title}</h4><div class="news-source"><span>Backend API</span><span>${trend.stage}</span></div></div>`;
+
+      if (signal.source === "reddit") {
+        return `<div class="mock-reddit"><div class="reddit-header"><div class="reddit-logo">r</div><span>Reddit · ${timeAgo(signal.timestamp)}</span></div><div class="reddit-body">${signal.text}</div><div class="reddit-footer"><span>🔺 ${signal.metrics.likes}</span><span>💬 ${signal.metrics.comments}</span></div></div>`;
+      }
+      if (signal.source === "x") {
+        return `<div class="mock-tweet"><div class="tweet-header"><div class="tweet-avatar">X</div><div class="tweet-userinfo"><span class="tweet-name">Live signal</span><span class="tweet-handle">X · ${timeAgo(signal.timestamp)}</span></div></div><div class="tweet-body">${signal.text}</div><div class="tweet-footer"><span>💬 ${signal.metrics.comments}</span><span>🔄 ${signal.metrics.shares}</span><span>❤️ ${signal.metrics.likes}</span></div></div>`;
+      }
+      return `<div class="mock-news"><span class="news-tag">${signal.source}</span><h4 class="news-title">${signal.text}</h4><div class="news-source"><span>Live source</span><span>${timeAgo(signal.timestamp)}</span></div></div>`;
+    }
+
+    function backendTrendToUi(trend) {
+      const relevance = Math.round((trend.classification?.kenya_relevance || 0.82) * 100);
+      const summary = trend.raw_signals?.[0]?.text || `${trend.title} is moving across founder-focused channels.`;
+      const why = trend.classification?.reasoning || "The trend is gaining attention because it connects to founder decisions, money and startup execution.";
+      return {
+        trendId: trend.trend_id,
+        title: trend.title,
+        category: trend.category,
+        score: trend.score,
+        lifespan: estimateLifespan(trend.stage),
+        velocity: `Score ${trend.score} live`,
+        stage: titleCaseStage(trend.stage),
+        platforms: trend.platforms || [],
+        shortSummary: summary,
+        firstSeen: timeAgo(trend.first_seen),
+        relevance,
+        happeningText: summary,
+        whyTrending: why,
+        emotionalTrigger: "Founder urgency, opportunity timing, and fear of missing the viral window.",
+        socialTrigger: "Cross-platform debate among founders, creators and operators.",
+        kuzanaAngle: "Turn the trend into one practical action a Kenyan founder can take today.",
+        previewHtml: signalPreviewHtml(trend),
+        carouselSlides: (trend.raw_signals || []).slice(0, 4).map(signal => ({
+          type: signal.source,
+          title: `${signal.source.toUpperCase()} signal`,
+          content: signalPreviewHtml({ ...trend, raw_signals: [signal] })
+        })),
+        hooks: [
+          `Kenyan founders should pay attention to this: ${trend.title}.`,
+          `This trend is moving fast, but the founder lesson is simple.`,
+          `If you run a Kenyan startup, do not ignore this shift.`
+        ],
+        script: {
+          v1: `[Hook] ${trend.title} is moving fast.\n[Context] The signal is spreading across ${trend.platforms?.join(", ") || "social platforms"}.\n[Insight] For Kenyan founders, the opportunity is to turn the conversation into a practical operating lesson.\n[Takeaway] Explain what changes, what to ignore, and what action a small team can take today.\n[CTA] Save this and share it with a founder who needs to move faster.`,
+          v2: `[Hook] This is not just another online debate.\n[Context] ${summary}\n[Insight] The creators who win will localize the trend before it peaks.\n[Takeaway] Tie it to Kenyan customer behavior, SME constraints and founder execution.\n[CTA] Comment with the business model you want analyzed next.`
+        },
+        remix: {
+          format: trend.title,
+          interpretation: "Kenyan founder operating lesson",
+          lesson: "Move from trend commentary to practical execution"
+        }
+      };
+    }
+
+    function applyBriefToActiveTrend(brief) {
+      activeTrend.kuzanaAngle = brief.angle || activeTrend.kuzanaAngle;
+      activeTrend.whyTrending = brief.why_it_is_spreading || activeTrend.whyTrending;
+      activeTrend.hooks = [brief.hook, ...activeTrend.hooks.filter(hook => hook !== brief.hook)].filter(Boolean).slice(0, 5);
+      activeTrend.script = {
+        v1: brief.script_30_60s || activeTrend.script.v1,
+        v2: activeTrend.script.v2
+      };
+      activeTrend.remix = {
+        format: activeTrend.title,
+        interpretation: brief.remix_template || activeTrend.remix.interpretation,
+        lesson: brief.kenyan_context || activeTrend.remix.lesson
+      };
+    }
+
+    async function loadBackendTrends({ refreshLive = false } = {}) {
+      try {
+        const response = await fetch(`${API_BASE}/trends${refreshLive ? "?refresh_live=true" : ""}`);
+        if (!response.ok) throw new Error(`API returned ${response.status}`);
+        const trends = await response.json();
+        liveTrends = trends.map(backendTrendToUi);
+        renderDashboardFeed();
+        renderTrendingStrip();
+        renderLiveTrendsGrid();
+        if (liveTrends.length) setActiveTrendItem(liveTrends[0]);
+        showToast("Backend Connected", `Loaded ${liveTrends.length} live backend trends.`, "success");
+      } catch (error) {
+        liveTrends = [];
+        showToast("Offline Fallback", "Backend not reachable; using local demo trends.", "info");
+      }
+    }
+
     // --- On-Chain Registry Log State ---
     let registeredTrends = [];
 
     // --- Initialize Page ---
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
       // Load registered trends from local storage
       const stored = localStorage.getItem("trendjack_registry");
       if (stored) {
@@ -2871,7 +2995,10 @@ function registerTrend(string trendId, bytes32 trendHash, string title, string c
       renderLiveTrendsGrid();
 
       // Set active trend to first element initially
-      setActiveTrendItem(mockTrends[0]);
+      setActiveTrendItem(getTrendDataset()[0]);
+
+      // Upgrade from local fallback to FastAPI data when available.
+      await loadBackendTrends();
 
       // Handle query params or initial view settings
       navigate('dashboard');
@@ -2919,7 +3046,7 @@ function registerTrend(string trendId, bytes32 trendHash, string title, string c
       const container = document.getElementById("priorityFeed");
       container.innerHTML = "";
 
-      mockTrends.forEach(trend => {
+      getTrendDataset().forEach(trend => {
         const catClass = getCategoryBadgeClass(trend.category);
         const card = document.createElement("div");
         card.className = "trend-card-large";
@@ -2982,7 +3109,7 @@ function registerTrend(string trendId, bytes32 trendHash, string title, string c
       const container = document.getElementById("trendingStrip");
       container.innerHTML = "";
 
-      mockTrends.forEach(trend => {
+      getTrendDataset().forEach(trend => {
         const card = document.createElement("div");
         card.className = "trending-strip-card";
         card.onclick = () => viewTrendDetail(trend.trendId);
@@ -2998,7 +3125,7 @@ function registerTrend(string trendId, bytes32 trendHash, string title, string c
       });
     }
 
-    function renderLiveTrendsGrid(filtered = mockTrends) {
+    function renderLiveTrendsGrid(filtered = getTrendDataset()) {
       const container = document.getElementById("trendsGrid");
       container.innerHTML = "";
 
@@ -3054,7 +3181,7 @@ function registerTrend(string trendId, bytes32 trendHash, string title, string c
       const platVal = document.getElementById("filterPlatform").value;
       const stageVal = document.getElementById("filterStage").value;
 
-      let filtered = mockTrends;
+      let filtered = getTrendDataset();
 
       if (catVal !== "all") {
         filtered = filtered.filter(t => t.category === catVal);
@@ -3071,7 +3198,7 @@ function registerTrend(string trendId, bytes32 trendHash, string title, string c
 
     // --- Detail page setter ---
     function viewTrendDetail(trendId) {
-      const trend = mockTrends.find(t => t.trendId === trendId);
+      const trend = getTrendDataset().find(t => t.trendId === trendId);
       if (!trend) return;
 
       setActiveTrendItem(trend);
@@ -3158,11 +3285,24 @@ function registerTrend(string trendId, bytes32 trendHash, string title, string c
     }
 
     // --- Content Brief Page Generator ---
-    function generateContentBrief(trendId) {
-      const trend = mockTrends.find(t => t.trendId === trendId);
+    async function generateContentBrief(trendId) {
+      const trend = getTrendDataset().find(t => t.trendId === trendId);
       if (!trend) return;
       
       setActiveTrendItem(trend);
+      try {
+        showToast("AI Service", "Generating brief from backend AI service...", "info");
+        const response = await fetch(`${API_BASE}/generate-brief`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ trend_id: trend.trendId })
+        });
+        if (!response.ok) throw new Error(`API returned ${response.status}`);
+        const brief = await response.json();
+        applyBriefToActiveTrend(brief);
+      } catch (error) {
+        showToast("AI Fallback", "Backend AI unavailable; using local brief template.", "info");
+      }
       renderContentBriefScreen();
       navigate('contentbriefs');
       showToast("Brief Generated", `AI brief for "${trend.title}" loaded successfully.`, "success");
@@ -3569,6 +3709,46 @@ function registerTrend(string trendId, bytes32 trendHash, string title, string c
           log(`Registration transaction failed: ${err.message}`, "error");
           showToast("Transaction Failed", err.reason || err.message, "info");
         }
+      }
+    }
+
+    async function registerActiveTrendViaBackend() {
+      if (!activeTrend) return;
+
+      try {
+        log(`Requesting backend registry service for "${activeTrend.title}"...`, "pending");
+        const response = await fetch(`${API_BASE}/register-trend`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            trend_id: activeTrend.trendId,
+            brief_hash: `sha256:${ethers.id(activeTrend.script.v1)}`
+          })
+        });
+        if (!response.ok) throw new Error(`API returned ${response.status}`);
+        const record = await response.json();
+        const txHash = record.transaction_hash || record.trend_hash;
+        const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        const newReg = {
+          trendId: activeTrend.trendId,
+          title: activeTrend.title,
+          category: activeTrend.category,
+          score: activeTrend.score,
+          hash: txHash,
+          timestamp,
+          status: record.status,
+          explorerUrl: record.explorer_url || ""
+        };
+
+        registeredTrends.unshift(newReg);
+        localStorage.setItem("trendjack_registry", JSON.stringify(registeredTrends));
+        updateRegistryUI();
+        log(`Backend registry status: ${record.status}`, record.transaction_hash ? "success" : "pending");
+        if (record.explorer_url) log(`Explorer URL: ${record.explorer_url}`);
+        showToast("Backend Registry", record.status, record.transaction_hash ? "success" : "info");
+      } catch (error) {
+        log(`Backend registry failed: ${error.message}`, "error");
+        showToast("Backend Registry Failed", error.message, "info");
       }
     }
 

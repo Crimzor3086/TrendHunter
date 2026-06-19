@@ -5,7 +5,7 @@ from backend.app.ai_brief_generator.service import generate_brief
 from backend.app.blockchain.service import AvalancheRegistryService
 from backend.app.cache_layer.cache import cache
 from backend.app.config import get_settings
-from backend.app.ingestion.sources import collect_demo_batch
+from backend.app.ingestion.sources import collect_demo_batch, collect_live_batch
 from backend.app.schemas import ContentBrief, GenerateBriefRequest, RawSignal, RegisterTrendRequest, RegistryRecord, Trend
 from backend.app.storage import store
 from backend.app.trend_engine.engine import build_trends
@@ -23,8 +23,7 @@ app.add_middleware(
 )
 
 
-def refresh_demo_pipeline() -> list[Trend]:
-    signals = collect_demo_batch()
+def process_signals(signals: list[RawSignal]) -> list[Trend]:
     for signal in signals:
         store.save_signal(signal)
 
@@ -37,9 +36,23 @@ def refresh_demo_pipeline() -> list[Trend]:
     return trends
 
 
+def refresh_demo_pipeline() -> list[Trend]:
+    return process_signals(collect_demo_batch())
+
+
+async def refresh_live_pipeline(use_fallback: bool = True) -> list[Trend]:
+    signals = await collect_live_batch(settings)
+    if not signals and use_fallback and settings.use_demo_seed:
+        signals = collect_demo_batch()
+    return process_signals(signals)
+
+
 @app.on_event("startup")
-def load_seed_data() -> None:
-    refresh_demo_pipeline()
+async def load_seed_data() -> None:
+    if settings.live_ingestion_on_startup:
+        await refresh_live_pipeline()
+    elif settings.use_demo_seed:
+        refresh_demo_pipeline()
 
 
 @app.get("/health")
@@ -56,8 +69,21 @@ def ingest_demo() -> list[RawSignal]:
     return signals
 
 
+@app.post("/ingest/live", response_model=list[Trend])
+async def ingest_live() -> list[Trend]:
+    trends = await refresh_live_pipeline(use_fallback=False)
+    if not trends:
+        raise HTTPException(status_code=424, detail="No live signals collected. Configure RSS, Reddit, or X sources.")
+    return trends
+
+
 @app.get("/trends", response_model=list[Trend])
-def get_trends() -> list[Trend]:
+async def get_trends(refresh_live: bool = False) -> list[Trend]:
+    if refresh_live:
+        trends = await refresh_live_pipeline(use_fallback=settings.use_demo_seed)
+        if trends:
+            return trends
+
     cached = cache.get("trending:kenya")
     if cached is not None:
         return cached
@@ -82,7 +108,7 @@ def get_trend(trend_id: str) -> Trend:
 
 
 @app.post("/generate-brief", response_model=ContentBrief)
-def post_generate_brief(request: GenerateBriefRequest) -> ContentBrief:
+async def post_generate_brief(request: GenerateBriefRequest) -> ContentBrief:
     trend = store.trends.get(request.trend_id)
     if trend is None:
         refresh_demo_pipeline()
@@ -90,7 +116,7 @@ def post_generate_brief(request: GenerateBriefRequest) -> ContentBrief:
     if trend is None:
         raise HTTPException(status_code=404, detail="Trend not found")
 
-    brief = generate_brief(trend)
+    brief = await generate_brief(trend, settings)
     store.save_brief(brief)
     return brief
 
