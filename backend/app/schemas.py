@@ -90,7 +90,31 @@ class RegistryRecord(BaseModel):
     category: TrendCategory
     score: int
     first_seen: datetime
+    content_hash: str | None = None
+    on_chain_trend_id: int | None = None
     transaction_hash: str | None = None
     explorer_url: str | None = None
     status: str
     payload: dict[str, Any]
+
+
+class BlockchainStatus(BaseModel):
+    configured: bool = False
+    rpc_url: str
+    chain_id: int
+    contract_address: str | None = None
+    connected: bool = False
+    trend_count: int | None = None
+    signer_address: str | None = None
+    error: str | None = None
+
+
+class OnChainTrend(BaseModel):
+    on_chain_trend_id: int
+    title: str
+    category: str
+    score: int
+    first_seen: int
+    content_hash: str
+    creator: str
+    verified: bool

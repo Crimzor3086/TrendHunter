@@ -1,8 +1,5 @@
 // --- Initialize Page ---
     document.addEventListener("DOMContentLoaded", async () => {
-      // Load registered trends from local storage
-      const demoToggle = document.getElementById("mockWeb3Toggle");
-      if (demoToggle) demoToggle.checked = isMockMode;
       const registryInput = document.getElementById("registryContractAddress");
       if (registryInput) {
         registryInput.value = localStorage.getItem("trend_hunter_registry_contract") || registryInput.value;
@@ -15,21 +12,6 @@
       const stored = localStorage.getItem(REGISTRY_STORAGE_KEY) || localStorage.getItem(LEGACY_REGISTRY_STORAGE_KEY);
       if (stored) {
         registeredTrends = JSON.parse(stored);
-      } else {
-        // Pre-populate with one past entry for high-fidelity look
-        registeredTrends = [
-          {
-            trendId: "mpesa-ledger-000",
-            title: "M-Pesa API transaction cost updates",
-            category: "Entrepreneurship",
-            score: 91,
-            hash: "0x8fa838df294fa4d173004b901a1d13f9c6d3de888879555cf498670df0a4cfc7",
-            timestamp: "2026-06-19 14:32:00",
-            status: "Success",
-            explorerUrl: "https://testnet.snowtrace.io/tx/0x8fa838df294fa4d173004b901a1d13f9c6d3de888879555cf498670df0a4cfc7"
-          }
-        ];
-        localStorage.setItem(REGISTRY_STORAGE_KEY, JSON.stringify(registeredTrends));
       }
 
       // Update total claims count in UI
@@ -44,10 +26,13 @@
       renderLiveTrendsGrid();
 
       // Set active trend to first element initially
-      setActiveTrendItem(getTrendDataset()[0]);
+      const initialTrend = getTrendDataset()[0];
+      if (initialTrend) setActiveTrendItem(initialTrend);
 
       // Upgrade from local fallback to FastAPI data when available.
+      await loadBackendBlockchainStatus();
       await loadBackendTrends();
+      await loadBackendRegistry();
 
       // Handle query params or initial view settings
       navigate('dashboard');

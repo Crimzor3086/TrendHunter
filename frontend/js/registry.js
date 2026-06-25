@@ -12,86 +12,52 @@
         return;
       }
 
-// Generate trend details hashes
-       const trendHash = canonicalTrendHash(activeTrend);
-       const briefHash = `ipfs://bafy-${activeTrend.trendId}-shoot-brief`;
+      const contentHash = canonicalTrendHash(activeTrend);
 
-       log(`Initiating registry for "${activeTrend.title}"...`, "pending");
-       
-       if (isMockMode) {
-         // Mock registry workflow
-         log(`[Simulating] Invoking registerTrend on contract ${contractAddress.slice(0, 8)}...`, "pending");
-         
-         setTimeout(() => {
-           const fakeTxHash = "0x" + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join("");
-           const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
-           
-           const newReg = {
-             trendId: activeTrend.trendId,
-             title: activeTrend.title,
-             category: activeTrend.category,
-             score: activeTrend.score,
-             hash: fakeTxHash,
-             timestamp: timestamp,
-             status: "Success",
-             explorerUrl: `https://testnet.snowtrace.io/tx/${fakeTxHash}`
-           };
+      log(`Initiating registry for "${activeTrend.title}"...`, "pending");
 
-           registeredTrends.unshift(newReg);
-           localStorage.setItem(REGISTRY_STORAGE_KEY, JSON.stringify(registeredTrends));
+      try {
+        const registryContract = new ethers.Contract(contractAddress, contractAbi, signer);
 
-           updateRegistryUI();
-           log(`Registered successfully on Fuji C-Chain!`, "success");
-           log(`Transaction hash: ${fakeTxHash}`);
-           log(`Explorer URL: https://testnet.snowtrace.io/tx/${fakeTxHash}`);
-           
-           showToast("Trend Registered", "Trend saved successfully in the Fuji Testnet registry.", "success");
-         }, 1500);
-       } else {
-         // Real Registry Transaction
-         try {
-           const registryContract = new ethers.Contract(contractAddress, contractAbi, signer);
-           
-           log(`Submitting on-chain transaction to contract ${contractAddress}...`, "pending");
-           const tx = await registryContract.registerTrend(
-             activeTrend.title,
-             activeTrend.category,
-             activeTrend.score,
-             briefHash
-           );
-           
-           log(`Transaction submitted! Hash: ${tx.hash}`, "pending");
-           showToast("Submitted", "Transaction submitted to blockchain. Waiting for block confirmation.", "info");
-           
-           await tx.wait();
-           
-           const returnedTrendId = await registryContract.trendCount();
-           const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
-           const newReg = {
-             trendId: returnedTrendId.toString(),
-             title: activeTrend.title,
-             category: activeTrend.category,
-             score: activeTrend.score,
-             hash: tx.hash,
-             timestamp: timestamp,
-             status: "Success",
-             explorerUrl: `https://testnet.snowtrace.io/tx/${tx.hash}`
-           };
+        log(`Submitting on-chain transaction to contract ${contractAddress}...`, "pending");
+        const tx = await registryContract.registerTrend(
+          activeTrend.title,
+          activeTrend.category,
+          activeTrend.score,
+          contentHash
+        );
 
-           registeredTrends.unshift(newReg);
-           localStorage.setItem(REGISTRY_STORAGE_KEY, JSON.stringify(registeredTrends));
+        log(`Transaction submitted! Hash: ${tx.hash}`, "pending");
+        showToast("Submitted", "Transaction submitted to blockchain. Waiting for block confirmation.", "info");
 
-           updateRegistryUI();
-           log(`Registered on Fuji Testnet!`, "success");
-           log(`Trend ID: ${returnedTrendId}`);
-           log(`Tx Explorer: https://testnet.snowtrace.io/tx/${tx.hash}`);
-           
-           showToast("Success!", "Registered on Avalanche blockchain.", "success");
-         } catch (err) {
-           log(`Registration transaction failed: ${err.message}`, "error");
-           showToast("Transaction Failed", err.reason || err.message, "info");
-         }
-       }
+        await tx.wait();
+
+        const returnedTrendId = await registryContract.trendCount();
+        const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        const newReg = {
+          trendId: returnedTrendId.toString(),
+          title: activeTrend.title,
+          category: activeTrend.category,
+          score: activeTrend.score,
+          hash: tx.hash,
+          timestamp: timestamp,
+          status: "Success",
+          explorerUrl: `https://testnet.snowtrace.io/tx/${tx.hash}`
+        };
+
+        registeredTrends.unshift(newReg);
+        localStorage.setItem(REGISTRY_STORAGE_KEY, JSON.stringify(registeredTrends));
+
+        updateRegistryUI();
+        log(`Registered on Fuji Testnet!`, "success");
+        log(`Trend ID: ${returnedTrendId}`);
+        log(`Tx Explorer: https://testnet.snowtrace.io/tx/${tx.hash}`);
+
+        showToast("Success!", "Registered on Avalanche blockchain.", "success");
+      } catch (err) {
+        log(`Registration transaction failed: ${err.message}`, "error");
+        showToast("Transaction Failed", err.reason || err.message, "info");
+      }
     }
 
     async function registerActiveTrendViaBackend() {
@@ -136,7 +102,6 @@
 
     function triggerRegisterFromDetail() {
       if (!activeTrend) return;
-      // Switch to registry tab, select the active trend and register
       navigate('registry');
       setTimeout(() => {
         registerActiveTrendOnChain();
@@ -169,7 +134,6 @@
         tableBody.appendChild(row);
       });
 
-      // Update claims counts
       document.getElementById("registryTotalClaims").textContent = registeredTrends.length;
       document.getElementById("settingsReputation").textContent = `${registeredTrends.length * 3} points`;
     }

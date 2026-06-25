@@ -5,15 +5,19 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
+    "test:backend": "pytest",
+    "test:all": "npm test && npm run test:backend",
     "backend": "uvicorn backend.app.main:app --reload --port 8000",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
     "deploy:fuji": "hardhat run scripts/deploy.js --network fuji",
     "verify": "hardhat verify --network fuji",
     "node": "hardhat node",
     "clean": "hardhat clean"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "hardhat": "^2.28.6"
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
+    "hardhat": "^3.9.0"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.0",

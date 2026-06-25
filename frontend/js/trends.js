@@ -3,7 +3,13 @@
       const container = document.getElementById("priorityFeed");
       container.innerHTML = "";
 
-      getTrendDataset().forEach(trend => {
+      const trends = getTrendDataset();
+      if (!trends.length) {
+        container.innerHTML = `<div style="padding:24px; color:var(--text-muted); text-align:center">Start the backend to load trends. See README for setup.</div>`;
+        return;
+      }
+
+      trends.forEach(trend => {
         const catClass = getCategoryBadgeClass(trend.category);
         const card = document.createElement("div");
         card.className = "trend-card-large";

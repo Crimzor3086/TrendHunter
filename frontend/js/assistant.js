@@ -44,10 +44,14 @@
       msgs.appendChild(loadingDiv);
       msgs.scrollTop = msgs.scrollHeight;
 
-      // Select matching simulated responses based on active trend
-      let response = "I'm analyzing your request. Let me customize the content for your audience...";
+      if (!activeTrend) {
+        msgs.removeChild(loadingDiv);
+        appendChatMessage("Select a trend from the feed first, then ask about hooks, scripts, or local context.", "assistant");
+        return;
+      }
 
-      const trend = activeTrend || mockTrends[0];
+      const trend = activeTrend;
+      let response = "I'm analyzing your request. Let me customize the content for your audience...";
 
       if (query.includes("Why is this trending?")) {
         response = `"${trend.title}" is trending because of ${trend.whyTrending} This is triggering high engagement triggers on ${trend.platforms.join(", ").toUpperCase()}.`;
@@ -56,15 +60,7 @@
       } else if (query.includes("Shorten script")) {
         response = `Here is a shortened 20-second version of the script:\n\n"Stop wasting money on heavy Shopify systems. Nairobi shop owners are using WhatsApp + Till numbers to automate 100% of their sales. Drop a comment for our setup guide!"`;
       } else if (query.includes("Make it more Kenyan relevant")) {
-        if (trend.trendId === "x-ai-interns-ke-001") {
-          response = `Kuzana Slang Remix 🇰🇪:\n\n"Wasee, early-stage founders wanamada manual work na AI agents za 20 bob! Kama wewe ni intern na unashinda tu ukicopy-paste ma-spreadsheets Kilimani, AI inakuja kukura! Amka na uanze kujua prompting ndio startup ikuandike kufanya real sales calls. Usikubali kuachwa nyuma."`;
-        } else if (trend.trendId === "sme-whatsapp-ke-002") {
-          response = `Kuzana Slang Remix 🇰🇪:\n\n"Kwanini ulipe designer 50k ya website na wasee wanatafuta bidhaa zako WhatsApp pekee? Kamukunji CBD sellers wameeka catalogs zao WhatsApp, waka-link na Till. Unalipa bob mbili kwa data na biashara inafanyika ukiwa umelala. Acha kucheza!"`;
-        } else if (trend.trendId === "founder-salaries-ke-003") {
-          response = `Kuzana Slang Remix 🇰🇪:\n\n"Unadhani ma-tech founders wanateseka na ma-Prado Nairobi? Boss, wengi wanalipa rent Kilimani na salary ya 70k bob! Hii biashara sio ya shoo. Extenda runway yako, lipa intern vizuri na utajenga biashara ya ukweli. Wacha kufake lifestyle."`;
-        } else {
-          response = `Kuzana Slang Remix 🇰🇪:\n\n"Safaricom wameongeza pricing ya M-Pesa API yetu. Kama ulikua unachaji 20 bob micropayments, margins zako zimeisha! Pivot haraka uunde wallet model ambapo wasee wanadeposit mara moja. Usipigane na Safaricom, jipange karibu nao."`;
-        }
+        response = `Kuzana Slang Remix 🇰🇪:\n\n"${trend.title}" ina lesson ya founder hapa Kenya. Frame it kwa SME constraints, M-Pesa behavior, na jinsi founders wa Nairobi wanafanya decisions leo.`;
       } else if (query.includes("Turn script into Twitter thread")) {
         response = `Here is your X/Twitter Thread format 🧵:\n\n1/ Nairobi startup founders are shifting priorities away from e-commerce websites. Here's why WhatsApp Catalog is winning in 2026. 👇\n\n2/ Data packages are expensive. The average customer won't wait 6 seconds for a heavy website to load. Moving your storefront straight to WhatsApp chat increases retention by 70%.\n\n3/ Automate payment triggers by linking WhatsApp catalogs directly to M-Pesa Till numbers. Click, Chat, Pay, Confirm.`;
       } else {

@@ -1,5 +1,5 @@
 function getTrendDataset() {
-      return liveTrends.length ? liveTrends : mockTrends;
+      return liveTrends;
     }
 
     function timeAgo(timestamp) {
@@ -116,6 +116,48 @@ function getTrendDataset() {
         showToast("Backend Connected", `Loaded ${liveTrends.length} live backend trends.`, "success");
       } catch (error) {
         liveTrends = [];
-        showToast("Offline Fallback", "Backend not reachable; using local demo trends.", "info");
+        showToast("Offline Fallback", "Backend not reachable; connect the API to load trends.", "info");
+      }
+    }
+
+    async function loadBackendBlockchainStatus() {
+      try {
+        const response = await fetch(`${API_BASE}/blockchain/status`);
+        if (!response.ok) return;
+        const status = await response.json();
+        const registryInput = document.getElementById("registryContractAddress");
+        if (registryInput && status.contract_address && !registryInput.value.trim()) {
+          registryInput.value = status.contract_address;
+          localStorage.setItem("trend_hunter_registry_contract", status.contract_address);
+          validateRegisterButtonState();
+        }
+      } catch (_error) {
+        // Backend may be offline during local-only wallet testing.
+      }
+    }
+
+    async function loadBackendRegistry() {
+      try {
+        const response = await fetch(`${API_BASE}/registry`);
+        if (!response.ok) return;
+        const records = await response.json();
+        if (!records.length) return;
+
+        const merged = records.map(record => ({
+          trendId: record.on_chain_trend_id ? String(record.on_chain_trend_id) : record.trend_id,
+          title: record.payload?.title || record.trend_id,
+          category: record.category,
+          score: record.score,
+          hash: record.transaction_hash || record.trend_hash,
+          timestamp: record.first_seen,
+          status: record.status,
+          explorerUrl: record.explorer_url || ""
+        }));
+
+        registeredTrends = merged;
+        localStorage.setItem(REGISTRY_STORAGE_KEY, JSON.stringify(registeredTrends));
+        updateRegistryUI();
+      } catch (_error) {
+        // Keep local registry cache when backend is unavailable.
       }
     }

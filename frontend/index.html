@@ -77,14 +77,6 @@
           </button>
         </div>
 
-        <!-- Demo wallet mode toggle -->
-        <div class="toggle-mode-container">
-          <span>Demo Wallet Mode</span>
-          <label class="switch">
-            <input type="checkbox" id="mockWeb3Toggle" onchange="toggleMockMode()">
-            <span class="slider"></span>
-          </label>
-        </div>
       </div>
     </aside>
 
@@ -531,7 +523,7 @@
             <div class="form-group" style="margin-top:10px">
               <label class="form-label">Smart Contract ABI (Subset)</label>
               <textarea class="form-input" style="font-family:'JetBrains Mono',monospace; font-size:0.75rem; height:100px; resize:none" readonly>
-function registerTrend(string trendId, bytes32 trendHash, string title, string category, uint256 score, string briefHash) external
+function registerTrend(string title, string category, uint256 score, string contentHash) external returns (uint256)
               </textarea>
             </div>
           </div>
@@ -617,7 +609,6 @@ function registerTrend(string trendId, bytes32 trendHash, string title, string c
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
 
   <script src="js/state.js"></script>
-  <script src="js/mock-data.js"></script>
   <script src="js/api.js"></script>
   <script src="js/toast.js"></script>
   <script src="js/trends.js"></script>

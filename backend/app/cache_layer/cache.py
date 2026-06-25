@@ -22,4 +22,65 @@ class LocalTTLCache:
         return value
 
 
-cache = LocalTTLCache()
+class RedisTTLCache:
+    def __init__(self, redis_url: str) -> None:
+        import redis
+
+        self._client = redis.from_url(redis_url, decode_responses=True, socket_connect_timeout=1)
+
+    def ping(self) -> None:
+        self._client.ping()
+
+    def set(self, key: str, value: Any, ttl_seconds: int = 120) -> None:
+        import json
+
+        self._client.setex(key, ttl_seconds, json.dumps(value, default=str))
+
+    def get(self, key: str) -> Any | None:
+        import json
+
+        raw = self._client.get(key)
+        if raw is None:
+            return None
+        return json.loads(raw)
+
+
+class FallbackTTLCache:
+    """Use Redis when available; otherwise fall back to in-process TTL cache."""
+
+    def __init__(self, redis_url: str) -> None:
+        self._fallback = LocalTTLCache()
+        self._redis: RedisTTLCache | None = None
+
+        try:
+            redis_cache = RedisTTLCache(redis_url)
+            redis_cache.ping()
+            self._redis = redis_cache
+        except Exception:
+            self._redis = None
+
+    def set(self, key: str, value: Any, ttl_seconds: int = 120) -> None:
+        if self._redis is not None:
+            try:
+                self._redis.set(key, value, ttl_seconds=ttl_seconds)
+                return
+            except Exception:
+                self._redis = None
+
+        self._fallback.set(key, value, ttl_seconds=ttl_seconds)
+
+    def get(self, key: str) -> Any | None:
+        if self._redis is not None:
+            try:
+                return self._redis.get(key)
+            except Exception:
+                self._redis = None
+
+        return self._fallback.get(key)
+
+
+def build_cache(redis_url: str | None) -> LocalTTLCache | FallbackTTLCache:
+    if not redis_url:
+        return LocalTTLCache()
+
+    return FallbackTTLCache(redis_url)

@@ -1,4 +1,6 @@
 const { ethers } = require("hardhat");
+const fs = require("fs");
+const path = require("path");
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -23,8 +25,24 @@ async function main() {
   await contract.waitForDeployment();
 
   const address = await contract.getAddress();
+  const network = await ethers.provider.getNetwork();
+
+  const deployment = {
+    network: "fuji",
+    chainId: Number(network.chainId),
+    contractName: "TrendRegistry",
+    address,
+    deployer: deployer.address,
+    deployedAt: new Date().toISOString(),
+  };
+
+  const deploymentsDir = path.join(__dirname, "..", "deployments");
+  fs.mkdirSync(deploymentsDir, { recursive: true });
+  const deploymentPath = path.join(deploymentsDir, "fuji-TrendRegistry.json");
+  fs.writeFileSync(deploymentPath, JSON.stringify(deployment, null, 2));
 
   console.log("Contract deployed to:", address);
+  console.log("Deployment artifact written to:", deploymentPath);
   console.log(
     "View on Snowtrace: https://testnet.snowtrace.io/address/" + address
   );

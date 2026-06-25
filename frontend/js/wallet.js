@@ -12,17 +12,6 @@
       document.getElementById("consoleLogs").innerHTML = "[SYSTEM] Logs cleared.";
     }
 
-    function toggleMockMode() {
-      isMockMode = document.getElementById("mockWeb3Toggle").checked;
-      log(`Switched to ${isMockMode ? 'Demo Wallet Mode' : 'Live Core Wallet Mode'}.`);
-      
-      // Reset wallet state
-      walletConnected = false;
-      signer = null;
-      updateWalletUI();
-      validateRegisterButtonState();
-    }
-
     function updateWalletUI() {
       const dot = document.getElementById("walletDot");
       const statusText = document.getElementById("walletStatusText");
@@ -31,8 +20,8 @@
 
       if (walletConnected) {
         dot.className = "wallet-status-dot connected";
-        statusText.textContent = isMockMode ? "Core Wallet (Demo)" : "Connected";
-        addressText.textContent = isMockMode ? "0x34aD...3F92" : shortenAddress(signer.address);
+        statusText.textContent = "Connected";
+        addressText.textContent = shortenAddress(signer.address);
         connectBtn.innerHTML = `<span>Disconnect</span>`;
         connectBtn.style.background = "linear-gradient(135deg, #10b981 0%, #047857 100%)";
       } else {
@@ -64,18 +53,7 @@
         return;
       }
 
-      if (isMockMode) {
-        // Simulated wallet connection
-        walletConnected = true;
-        signer = { address: "0x34aDbF9527D6cE8047F46B18D3b5840A6B9B3F92" };
-        updateWalletUI();
-        validateRegisterButtonState();
-        log("Connected to Core Wallet (Demo Mode) on Fuji Testnet (Chain ID 43113).");
-        showToast("Wallet Connected", "Successfully simulated Core Wallet connection.", "success");
-        return;
-      }
-
-      // Real provider logic
+      // Core Wallet / injected provider
       const injected = window.avalanche || window.ethereum;
       if (!injected) {
         log("No injected Web3 Wallet detected. Please install Core Wallet browser extension.", "error");
